@@ -30,6 +30,7 @@ public class OllamaService {
     /**
      * Send a chat request to Ollama with a specific model, system prompt, and message history.
      * Returns the full response string.
+     * Handles thinking models (qwen3-coder, qwen3.5) by disabling think mode.
      */
     public String chat(String modelName, String systemPrompt, List<Message> history, String userMessage) {
         try {
@@ -39,9 +40,13 @@ public class OllamaService {
                     .temperature(0.7)
                     .numPredict(1024)
                     .build();
+            // Disable thinking mode for thinking models (qwen3-coder, qwen3.5 etc)
+            // This ensures we get plain text back instead of <think>...</think> blocks
+            options.setThink(false);
+
             Prompt prompt = new Prompt(messages, options);
             ChatResponse response = chatModel.call(prompt);
-            return response.getResult().getOutput().getText();
+            return extractText(response);
         } catch (Exception e) {
             log.error("Error calling Ollama model {}: {}", modelName, e.getMessage());
             // Try fallback model
@@ -64,11 +69,17 @@ public class OllamaService {
                     .temperature(0.7)
                     .numPredict(1024)
                     .build();
+            options.setThink(false);
+
             Prompt prompt = new Prompt(messages, options);
             return chatModel.stream(prompt)
                     .map(response -> {
                         String text = response.getResult().getOutput().getText();
-                        return text != null ? text : "";
+                        if (text == null) {
+                            Object raw = response.getResult().getOutput().getContent();
+                            text = raw != null ? raw.toString() : "";
+                        }
+                        return text;
                     })
                     .onErrorResume(e -> {
                         log.error("Streaming error for model {}: {}", modelName, e.getMessage());
@@ -112,6 +123,28 @@ public class OllamaService {
         }
         messages.add(UserMessage.builder().text(userMessage).build());
         return messages;
+    }
+
+    /**
+     * Extract text from ChatResponse — handles thinking models where getText() may return null.
+     */
+    private String extractText(ChatResponse response) {
+        if (response == null || response.getResult() == null) return "";
+        var output = response.getResult().getOutput();
+        if (output == null) return "";
+
+        // Primary: getText()
+        String text = output.getText();
+        if (text != null && !text.isBlank()) return text;
+
+        // Fallback: getContent() as string (some model adapters use this)
+        Object content = output.getContent();
+        if (content != null) {
+            String contentStr = content.toString();
+            if (!contentStr.isBlank()) return contentStr;
+        }
+
+        return "";
     }
 
     /**

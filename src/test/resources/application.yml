@@ -26,10 +26,10 @@ app:
       mental-health: medllama2
       common-disease: medllama2
       complex-disease: meditron
-      medicine: qwen3.5:latest
+      medicine: qwen3-coder:latest
       embedding: nomic-embed-text:latest
       fallback: llama3.1:8b
-      guidance: qwen3.5:latest
+      guidance: qwen3-coder:latest
   confidence:
     threshold-common: 80
     threshold-complex: 85
