@@ -196,7 +196,8 @@ public class ChatService {
                 userId, botType.toUpperCase(), PageRequest.of(0, HISTORY_WINDOW));
 
         // Reverse to get chronological order
-        List<ChatMessage> chronological = recentMessages.reversed();
+        List<ChatMessage> chronological = new java.util.ArrayList<>(recentMessages);
+        java.util.Collections.reverse(chronological);
 
         return chronological.stream()
                 .filter(m -> !m.getRole().equals("SYSTEM"))

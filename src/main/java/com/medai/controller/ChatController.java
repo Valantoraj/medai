@@ -122,7 +122,7 @@ public class ChatController {
 
         executor.execute(() -> {
             try {
-                flux.blockingForEach(token -> {
+                flux.toIterable().forEach(token -> {
                     try {
                         emitter.send(SseEmitter.event().data(token));
                     } catch (IOException e) {

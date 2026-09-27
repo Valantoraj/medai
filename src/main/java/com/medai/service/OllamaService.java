@@ -86,12 +86,9 @@ public class OllamaService {
     public float[] generateEmbedding(String text) {
         try {
             var response = embeddingModel.embedForResponse(List.of(text));
-            double[] doubles = response.getResults().get(0).getOutput();
-            float[] floats = new float[doubles.length];
-            for (int i = 0; i < doubles.length; i++) {
-                floats[i] = (float) doubles[i];
-            }
-            return floats;
+            // Spring AI 1.0.0: getOutput() returns float[]
+            float[] output = response.getResults().get(0).getOutput();
+            return output;
         } catch (Exception e) {
             log.error("Error generating embedding: {}", e.getMessage());
             return new float[768]; // zero vector fallback
