@@ -127,16 +127,25 @@ public class OllamaService {
     }
 
     /**
-     * Extract text from ChatResponse — handles thinking models where getText() may return null
-     * when the model returns only a thinking block with no final answer text.
+     * Extract text from ChatResponse — handles cases where getText() returns null
+     * by also checking the raw message string representation.
      */
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) return "";
         var output = response.getResult().getOutput();
         if (output == null) return "";
 
+        // Primary: getText()
         String text = output.getText();
         if (text != null && !text.isBlank()) return text;
+
+        // Fallback: toString() on the message itself (catches edge cases)
+        try {
+            String raw = output.toString();
+            if (raw != null && !raw.isBlank() && !raw.startsWith("AssistantMessage")) {
+                return raw;
+            }
+        } catch (Exception ignored) {}
 
         return "";
     }

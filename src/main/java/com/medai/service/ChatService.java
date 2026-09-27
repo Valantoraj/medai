@@ -62,6 +62,15 @@ public class ChatService {
         // 5. Call Ollama
         String botResponse = ollamaService.chat(resolveModel(botType), enrichedSystemPrompt, history, userMessage);
 
+        // Safety: if empty response (can happen with thinking models or empty history edge cases)
+        if (botResponse == null || botResponse.isBlank()) {
+            log.warn("Empty response from model {} for botType {}. Retrying without history.", resolveModel(botType), botType);
+            botResponse = ollamaService.chat(resolveModel(botType), enrichedSystemPrompt, List.of(), userMessage);
+        }
+        if (botResponse == null || botResponse.isBlank()) {
+            botResponse = "I'm sorry, I wasn't able to generate a response. Please try rephrasing your question.";
+        }
+
         // 6. Persist assistant response
         persistMessage(session, "ASSISTANT", botResponse);
 
