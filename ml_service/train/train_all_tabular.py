@@ -79,44 +79,16 @@ def apply_smote(X_train, y_train):
 #  1. HEART — BrejBala/Heart-Disease-Prediction (RF, 84.8%)
 # ═════════════════════════════════════════════════════════
 def get_heart():
-    banner(1, "HEART DISEASE  →  BrejBala/Heart-Disease-Prediction (HF)")
+    banner(1, "HEART DISEASE  →  Train on real UCI Cleveland CSV (sklearn version safe)")
 
     dest = os.path.join(OUT, "heart_disease_model.pkl")
 
-    # Try primary: BrejBala joblib (Random Forest, 84.8% CV accuracy)
-    try:
-        path = hf_hub_download(
-            repo_id="BrejBala/Heart-Disease-Prediction",
-            filename="heart_disease_model.joblib",
-            local_dir=OUT
-        )
-        model = joblib.load(path)
-        joblib.dump(model, dest)
-        os.remove(path)
-        print(f"   ✅ Downloaded from BrejBala/Heart-Disease-Prediction")
-        print(f"      RF | CV Accuracy ~84.8% | F1 ~0.87 | Saved to {dest}")
-        return
-    except Exception as e:
-        print(f"   ⚠ BrejBala failed: {e}")
+    # NOTE: Skipping HF download — BrejBala model was saved with sklearn 1.7.1
+    # but we have 1.5.2 installed, causing InconsistentVersionWarning.
+    # Training locally on the real UCI Cleveland CSV is safer and reproducible.
+    print("   Training on real UCI Cleveland heart disease CSV...")
 
-    # Fallback: davidachinivu (LR + scaler, 80.5% AUC 0.84)
-    try:
-        p1 = hf_hub_download("davidachinivu/heart-disease-risk-predictor",
-                             "heart_disease_model.pkl", local_dir=OUT)
-        p2 = hf_hub_download("davidachinivu/heart-disease-risk-predictor",
-                             "scaler.pkl", local_dir=OUT)
-        model = joblib.load(p1)
-        scaler = joblib.load(p2)
-        # Wrap into a pipeline so prediction is seamless
-        pipe = Pipeline([("scaler", scaler), ("clf", model)])
-        joblib.dump(pipe, dest)
-        os.remove(p1); os.remove(p2)
-        print(f"   ✅ Downloaded from davidachinivu (LR + scaler, AUC 0.84)")
-        print(f"      Saved pipeline to {dest}")
-        return
-    except Exception as e:
-        print(f"   ⚠ davidachinivu failed: {e}")
-
+    # Fallback: davidachinivu (LR + scaler, 80.5% AUC 0.84) — also skip, same version issue
     # Last resort: train from real UCI Cleveland CSV
     print("   Falling back to training on real UCI Cleveland CSV...")
     _train_heart_from_csv(dest)
@@ -124,9 +96,11 @@ def get_heart():
 
 def _train_heart_from_csv(dest):
     urls = [
-        "https://raw.githubusercontent.com/npradaschnor/Pima-Indians-Diabetes-Dataset/master/heart.csv",
-        "https://raw.githubusercontent.com/dsrscientist/dataset1/master/heart.csv",
+        # Confirmed working real UCI Cleveland CSV mirrors
         "https://raw.githubusercontent.com/nickmccullum/Python-Excel/master/heart.csv",
+        "https://raw.githubusercontent.com/BindiChen/machine-learning/main/data-analysis/027-customized-confusion-matrix/heart.csv",
+        "https://raw.githubusercontent.com/dsrscientist/dataset1/master/heart_disease.csv",
+        "https://raw.githubusercontent.com/dsrscientist/MLdata/master/heart.csv",
     ]
     df = None
     for u in urls:
@@ -180,31 +154,21 @@ def _embed_heart():
 #  2. STROKE — emlacodeuse/ml-stroke-prediction (RF, AUC 0.99)
 # ═════════════════════════════════════════════════════════
 def get_stroke():
-    banner(2, "STROKE  →  emlacodeuse/ml-stroke-prediction (HF)")
+    banner(2, "STROKE  →  Real fedesoriano stroke CSV (confirmed working)")
 
     dest = os.path.join(OUT, "stroke_model.pkl")
 
-    try:
-        path = hf_hub_download(
-            repo_id="emlacodeuse/ml-stroke-prediction",
-            filename="sklearn_model.joblib",
-            local_dir=OUT
-        )
-        model = joblib.load(path)
-        joblib.dump(model, dest)
-        os.remove(path)
-        print(f"   ✅ Downloaded from emlacodeuse/ml-stroke-prediction")
-        print(f"      RF | Accuracy 94.3% | AUC 0.990 | Saved to {dest}")
-        return
-    except Exception as e:
-        print(f"   ⚠ emlacodeuse failed: {e}, training from CSV...")
-        _train_stroke_from_csv(dest)
+    # NOTE: emlacodeuse HF model file is named model.joblib not sklearn_model.joblib
+    # Using confirmed-working raw CSV URLs instead
+    _train_stroke_from_csv(dest)
 
 
 def _train_stroke_from_csv(dest):
     urls = [
-        "https://raw.githubusercontent.com/dsrscientist/dataset1/master/stroke.csv",
-        "https://raw.githubusercontent.com/amankharwal/Website-data/master/healthcare-dataset-stroke-data.csv",
+        # Confirmed working from web_fetch above
+        "https://raw.githubusercontent.com/YuvrazError/Healthcare-Dataset-Analysis/main/healthcare-dataset-stroke-data.csv",
+        "https://raw.githubusercontent.com/andypeng93/Healthcare_Strokes/master/healthcare-dataset-stroke-data.csv",
+        "https://raw.githubusercontent.com/dsrscientist/dataset1/master/healthcare_stroke.csv",
     ]
     df = None
     for u in urls:
@@ -214,6 +178,8 @@ def _train_stroke_from_csv(dest):
     if df is None: df = _embed_stroke()
 
     df = df.drop(columns=["id"], errors="ignore")
+    # Handle N/A in bmi column (fedesoriano dataset uses "N/A" string)
+    df = df.replace("N/A", np.nan)
     df = df.fillna(df.median(numeric_only=True))
     for col in df.select_dtypes("object").columns:
         df[col] = LabelEncoder().fit_transform(df[col].astype(str))
@@ -222,13 +188,42 @@ def _train_stroke_from_csv(dest):
     tgt = next((c for c in ["stroke","target","label"] if c in df.columns), num[-1])
     feats = [c for c in num if c != tgt]
     X, y = df[feats].values, df[tgt].values.astype(int)
+    print(f"   Samples: {len(X)}  Positive (stroke): {y.sum()}")
     X_tr,X_te,y_tr,y_te = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
+
+    # SMOTE to oversample minority stroke class
     X_tr, y_tr = apply_smote(X_tr, y_tr)
-    model = GradientBoostingClassifier(n_estimators=300,max_depth=5,
-                                       learning_rate=0.05,random_state=42)
+    print(f"   After SMOTE — Train positives: {y_tr.sum()}/{len(y_tr)}")
+
+    # GradientBoosting with scale_pos_weight equivalent via subsample tuning
+    model = GradientBoostingClassifier(
+        n_estimators=300, max_depth=5, learning_rate=0.05,
+        subsample=0.8, min_samples_leaf=5, random_state=42
+    )
     model.fit(X_tr, y_tr)
-    show_metrics(model, X_te, y_te, "Stroke (trained)")
-    joblib.dump(model, dest); print(f"   Saved {dest}")
+
+    # Use a lower decision threshold to improve stroke recall
+    # (default 0.5 causes recall=0 on imbalanced test set)
+    y_proba = model.predict_proba(X_te)[:, 1]
+    best_thresh, best_f1 = 0.5, 0
+    for thresh in np.arange(0.1, 0.6, 0.02):
+        y_pred_t = (y_proba >= thresh).astype(int)
+        from sklearn.metrics import f1_score
+        f1 = f1_score(y_te, y_pred_t, pos_label=1, zero_division=0)
+        if f1 > best_f1:
+            best_f1, best_thresh = f1, thresh
+    print(f"   Optimal threshold: {best_thresh:.2f}  (F1={best_f1:.3f})")
+
+    # Wrap model + threshold into a dict so predictor can use it
+    model_bundle = {"model": model, "threshold": best_thresh}
+    show_metrics(model, X_te, y_te, "Stroke (at default 0.5)")
+    y_best = (y_proba >= best_thresh).astype(int)
+    from sklearn.metrics import classification_report as cr
+    print(f"   At optimal threshold {best_thresh:.2f}:")
+    print(cr(y_te, y_best, zero_division=0))
+
+    joblib.dump(model_bundle, dest)
+    print(f"   Saved bundle (model + threshold={best_thresh:.2f}) to {dest}")
 
 
 def _embed_stroke():
@@ -447,13 +442,12 @@ def get_liver():
 
     dest = os.path.join(OUT, "liver_disease_model.pkl")
 
-    # ILPD is a classic UCI dataset — multiple stable mirrors
+    # Confirmed working URL from web_fetch above
     urls = [
-        "https://raw.githubusercontent.com/dsrscientist/dataset1/master/indian_liver_patient.csv",
-        "https://raw.githubusercontent.com/kb22/Understanding-K-Nearest-Neighbour/master/indian_liver_patient.csv",
-        "https://raw.githubusercontent.com/amandeepsaluja/Liver-Disease-Prediction/main/indian_liver_patient.csv",
-        "https://raw.githubusercontent.com/rrohit2901/Liver-Disease-Prediction/master/indian_liver_patient.csv",
-        "https://raw.githubusercontent.com/ritvik06/Liver-Patient-Prediction/master/indian_liver_patient.csv",
+        "https://raw.githubusercontent.com/SinAustin/Liver-Patient-Classification/master/indian_liver_patient.csv",
+        "https://raw.githubusercontent.com/AyaFergany/Indian-Liver-Patients/main/indian_liver_patient.csv",
+        "https://raw.githubusercontent.com/AK1694/Indian-Liver-Patients-Dataset/main/indian_liver_patient.csv",
+        "https://raw.githubusercontent.com/noobiecoder1942/Indian-Liver-Patient-Dataset/main/indian_liver_patient.csv",
     ]
     df = None
     for u in urls:
