@@ -2,8 +2,6 @@ package com.medai.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -33,9 +31,13 @@ public class UserInteraction {
     @Column(name = "output_summary", columnDefinition = "TEXT")
     private String outputSummary;
 
-    // pgvector column — stored as float array, mapped via pgvector type
-    @Column(name = "embedding", columnDefinition = "vector(768)")
-    @JdbcTypeCode(SqlTypes.VECTOR)
+    // Stored as TEXT in Java — inserted as vector via native SQL in repository
+    // Avoids Hibernate bytea/vector type conflict with pgvector
+    @Column(name = "embedding", columnDefinition = "vector(768)", insertable = false, updatable = false)
+    private String embeddingPlaceholder;
+
+    // Transient holder used during save — see UserInteractionRepository.saveWithEmbedding()
+    @Transient
     private float[] embedding;
 
     @Column(name = "created_at")

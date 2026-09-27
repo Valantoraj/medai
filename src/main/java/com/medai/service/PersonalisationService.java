@@ -94,21 +94,30 @@ public class PersonalisationService {
     @Transactional
     public void logInteraction(Long userId, String feature, String inputSummary, String outputSummary) {
         try {
-            User user = userRepository.getReferenceById(userId);
             float[] embedding = ollamaService.generateEmbedding(inputSummary);
+            String embeddingStr = toPostgresVector(embedding);
 
-            UserInteraction interaction = UserInteraction.builder()
-                    .user(user)
-                    .feature(feature)
-                    .inputSummary(truncate(inputSummary, 500))
-                    .outputSummary(truncate(outputSummary, 500))
-                    .embedding(embedding)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            interactionRepository.save(interaction);
+            interactionRepository.insertWithEmbedding(
+                    userId,
+                    feature,
+                    truncate(inputSummary, 500),
+                    truncate(outputSummary, 500),
+                    embeddingStr,
+                    LocalDateTime.now()
+            );
         } catch (Exception e) {
-            log.error("Failed to log interaction for user {}: {}", userId, e.getMessage());
+            log.warn("Embedding generation failed, saving interaction without embedding: {}", e.getMessage());
+            try {
+                interactionRepository.insertWithoutEmbedding(
+                        userId,
+                        feature,
+                        truncate(inputSummary, 500),
+                        truncate(outputSummary, 500),
+                        LocalDateTime.now()
+                );
+            } catch (Exception e2) {
+                log.error("Failed to log interaction for user {}: {}", userId, e2.getMessage());
+            }
         }
     }
 
