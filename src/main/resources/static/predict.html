@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedAI — Disease Risk Prediction</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <link rel="stylesheet" href="/css/responsive.css"/>
+  <style>
+    .predict-layout { display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 56px); }
+    .predict-sidebar { background:var(--bg-2); border-right:1px solid var(--border); padding:16px 12px; overflow-y:auto; }
+    .disease-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; border:1px solid transparent; margin-bottom:4px; }
+    .disease-item:hover { background:var(--bg-hover); border-color:var(--border); }
+    .disease-item.active { background:color-mix(in srgb,var(--accent) 10%,transparent); border-color:var(--accent); }
+    .disease-icon { font-size:20px; width:36px; height:36px; background:var(--bg-card); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .predict-main { padding:24px; overflow-y:auto; }
+    .predict-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .result-card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-top:24px; animation:fadeIn 0.3s ease-out; }
+    .risk-meter { width:100%; height:12px; background:var(--bg-hover); border-radius:8px; overflow:hidden; margin:12px 0; }
+    .risk-fill { height:100%; border-radius:8px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/index.html">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span class="gradient-text">MedAI</span>
+  </a>
+  <div class="navbar-links">
+    <a class="nav-link" href="/chat.html">🤖 Chatbots</a>
+    <a class="nav-link" href="/medicine.html">💊 Medicine</a>
+    <a class="nav-link active" href="/predict.html">📊 Predict</a>
+    <a class="nav-link" href="/predict-image.html">🔬 Scan</a>
+    <a class="nav-link" href="/hospitals.html">🏥 Hospitals</a>
+    <a class="nav-link" href="/dashboard.html">📈 Dashboard</a>
+  </div>
+  <div class="navbar-right">
+    <button class="personalisation-toggle" id="personalisation-toggle">
+      <span class="dot"></span><span class="toggle-label">General</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+    <button class="btn btn-ghost btn-icon" id="theme-toggle">☀️</button>
+  </div>
+</nav>
+
+<div class="predict-layout">
+  <!-- Disease selector sidebar -->
+  <aside class="predict-sidebar">
+    <div class="section-title" style="padding:0 8px;margin-bottom:12px;">Disease Assessment</div>
+    <div id="disease-nav">
+      <div class="disease-item active" data-disease="heart" onclick="selectDisease('heart')">
+        <div class="disease-icon">❤️</div>
+        <div><div style="font-size:12px;font-weight:600;">Heart Disease</div><div style="font-size:10px;color:var(--text-muted);">13 parameters</div></div>
+      </div>
+      <div class="disease-item" data-disease="stroke" onclick="selectDisease('stroke')">
+        <div class="disease-icon">🧠</div>
+        <div><div style="font-size:12px;font-weight:600;">Stroke</div><div style="font-size:10px;color:var(--text-muted);">10 parameters</div></div>
+      </div>
+      <div class="disease-item" data-disease="diabetes" onclick="selectDisease('diabetes')">
+        <div class="disease-icon">🩸</div>
+        <div><div style="font-size:12px;font-weight:600;">Diabetes</div><div style="font-size:10px;color:var(--text-muted);">8 parameters</div></div>
+      </div>
+      <div class="disease-item" data-disease="lung-tabular" onclick="selectDisease('lung-tabular')">
+        <div class="disease-icon">🫁</div>
+        <div><div style="font-size:12px;font-weight:600;">Lung Cancer Risk</div><div style="font-size:10px;color:var(--text-muted);">15 parameters</div></div>
+      </div>
+      <div class="disease-item" data-disease="kidney-tabular" onclick="selectDisease('kidney-tabular')">
+        <div class="disease-icon">🫘</div>
+        <div><div style="font-size:12px;font-weight:600;">Kidney Stone</div><div style="font-size:10px;color:var(--text-muted);">6 parameters</div></div>
+      </div>
+      <div class="disease-item" data-disease="liver" onclick="selectDisease('liver')">
+        <div class="disease-icon">🟤</div>
+        <div><div style="font-size:12px;font-weight:600;">Liver Disease</div><div style="font-size:10px;color:var(--text-muted);">10 parameters</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main form area -->
+  <div class="predict-main">
+    <div id="form-container"></div>
+    <div id="result-container"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js"></script>
+<script src="/js/predict.js"></script>
+</body>
+</html>

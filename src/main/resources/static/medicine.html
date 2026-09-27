@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedAI — Medicine Information</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <link rel="stylesheet" href="/css/chat.css"/>
+  <link rel="stylesheet" href="/css/responsive.css"/>
+  <style>
+    .medicine-layout { display:grid; grid-template-columns: 1fr 340px; height:calc(100vh - 56px); }
+    .mode-toggle-bar { display:flex; align-items:center; gap:8px; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--bg-2); }
+    .mode-btn { padding:5px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+    .mode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/index.html">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span class="gradient-text">MedAI</span>
+  </a>
+  <div class="navbar-links">
+    <a class="nav-link" href="/chat.html">🤖 Chatbots</a>
+    <a class="nav-link active" href="/medicine.html">💊 Medicine</a>
+    <a class="nav-link" href="/predict.html">📊 Predict</a>
+    <a class="nav-link" href="/predict-image.html">🔬 Scan</a>
+    <a class="nav-link" href="/hospitals.html">🏥 Hospitals</a>
+    <a class="nav-link" href="/dashboard.html">📈 Dashboard</a>
+  </div>
+  <div class="navbar-right">
+    <button class="personalisation-toggle" id="personalisation-toggle">
+      <span class="dot"></span><span class="toggle-label">General</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+    <button class="btn btn-ghost btn-icon" id="theme-toggle">☀️</button>
+  </div>
+</nav>
+
+<div class="medicine-layout">
+  <!-- Main area -->
+  <div style="display:flex;flex-direction:column;overflow:hidden;">
+    <div class="mode-toggle-bar">
+      <span style="font-size:13px;font-weight:600;color:var(--text);">💊 Medicine Information</span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--text-muted);">Mode:</span>
+        <button class="mode-btn active" id="mode-chat-btn" onclick="setMode('chat')">Conversational</button>
+        <button class="mode-btn" id="mode-single-btn" onclick="setMode('single')">Single Ask</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:12px;">💊</div>
+        <h3 style="font-size:16px;margin-bottom:8px;">Medicine Information Assistant</h3>
+        <p style="font-size:13px;color:var(--text-muted);max-width:380px;margin:0 auto;">
+          Ask me about any medication — uses, side effects, drug interactions, contraindications, and more.
+          Choose <strong>Conversational</strong> for a back-and-forth session, or <strong>Single Ask</strong> for a one-shot answer.
+        </p>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea class="chat-textarea" id="chat-input" placeholder="e.g. What are the side effects of ibuprofen?" rows="1"></textarea>
+      <button class="chat-send-btn" id="send-btn">➤</button>
+    </div>
+  </div>
+
+  <!-- Info panel -->
+  <aside style="background:var(--bg-2);border-left:1px solid var(--border);padding:20px;overflow-y:auto;">
+    <div class="section-title">Safety Reminders</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+      <div style="background:color-mix(in srgb,var(--warning) 10%,transparent);border:1px solid var(--warning);border-radius:8px;padding:10px;font-size:12px;">
+        ⚠️ Always consult your doctor or pharmacist before starting or stopping any medication.
+      </div>
+      <div style="background:color-mix(in srgb,var(--danger) 8%,transparent);border:1px solid var(--danger);border-radius:8px;padding:10px;font-size:12px;">
+        ❌ Never share prescription medications with others.
+      </div>
+      <div style="background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid var(--accent);border-radius:8px;padding:10px;font-size:12px;">
+        ℹ️ Drug interactions can be serious. Always inform your doctor about all medications you take.
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:24px;">Quick Searches</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;" id="quick-searches">
+      <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="quickSearch('Ibuprofen side effects')">Ibuprofen side effects</button>
+      <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="quickSearch('Paracetamol overdose symptoms')">Paracetamol overdose symptoms</button>
+      <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="quickSearch('Metformin and alcohol interaction')">Metformin + alcohol interaction</button>
+      <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="quickSearch('Aspirin during pregnancy safety')">Aspirin in pregnancy</button>
+      <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;" onclick="quickSearch('Amoxicillin dosage for adults')">Amoxicillin dosage</button>
+    </div>
+    <div class="section-title" style="margin-top:24px;">Model</div>
+    <div class="badge badge-accent" style="margin-top:6px;">qwen3.5:latest</div>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5;">Strong medical + general knowledge. All responses run locally.</p>
+  </aside>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js"></script>
+<script src="/js/medicine.js"></script>
+</body>
+</html>

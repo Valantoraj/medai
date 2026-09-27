@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedAI — Cancer Image Diagnosis</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <link rel="stylesheet" href="/css/responsive.css"/>
+  <style>
+    .image-predict-layout { display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 56px); }
+    .scan-sidebar { background:var(--bg-2); border-right:1px solid var(--border); padding:16px 12px; }
+    .scan-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; border:1px solid transparent; margin-bottom:4px; }
+    .scan-item:hover { background:var(--bg-hover); border-color:var(--border); }
+    .scan-item.active { background:color-mix(in srgb,var(--medical) 10%,transparent); border-color:var(--medical); }
+    .scan-icon { font-size:20px; width:36px; height:36px; background:var(--bg-card); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .upload-zone { border:2px dashed var(--border); border-radius:14px; padding:48px 24px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--bg-card); }
+    .upload-zone:hover, .upload-zone.dragover { border-color:var(--medical); background:color-mix(in srgb,var(--medical) 5%,var(--bg-card)); }
+    .image-preview { max-width:100%; max-height:320px; border-radius:10px; border:1px solid var(--border); }
+    .result-card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-top:20px; animation:fadeIn 0.3s; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/index.html">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span class="gradient-text">MedAI</span>
+  </a>
+  <div class="navbar-links">
+    <a class="nav-link" href="/chat.html">🤖 Chatbots</a>
+    <a class="nav-link" href="/medicine.html">💊 Medicine</a>
+    <a class="nav-link" href="/predict.html">📊 Predict</a>
+    <a class="nav-link active" href="/predict-image.html">🔬 Scan</a>
+    <a class="nav-link" href="/hospitals.html">🏥 Hospitals</a>
+    <a class="nav-link" href="/dashboard.html">📈 Dashboard</a>
+  </div>
+  <div class="navbar-right">
+    <button class="personalisation-toggle" id="personalisation-toggle">
+      <span class="dot"></span><span class="toggle-label">General</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+    <button class="btn btn-ghost btn-icon" id="theme-toggle">☀️</button>
+  </div>
+</nav>
+
+<div class="image-predict-layout">
+  <aside class="scan-sidebar">
+    <div class="section-title" style="padding:0 8px;margin-bottom:12px;">Cancer Type</div>
+    <div class="scan-item active" data-scan="lung" onclick="selectScan('lung')">
+      <div class="scan-icon">🫁</div>
+      <div><div style="font-size:12px;font-weight:600;">Lung Cancer</div><div style="font-size:10px;color:var(--text-muted);">CT Scan · jawbra/lungevaty</div></div>
+    </div>
+    <div class="scan-item" data-scan="skin" onclick="selectScan('skin')">
+      <div class="scan-icon">🩹</div>
+      <div><div style="font-size:12px;font-weight:600;">Skin Cancer</div><div style="font-size:10px;color:var(--text-muted);">Dermoscopy · EfficientNetV2S</div></div>
+    </div>
+    <div class="scan-item" data-scan="blood" onclick="selectScan('blood')">
+      <div class="scan-icon">🩸</div>
+      <div><div style="font-size:12px;font-weight:600;">Blood/Leukemia</div><div style="font-size:10px;color:var(--text-muted);">Blood Smear · MICCAI 2024</div></div>
+    </div>
+    <div class="scan-item" data-scan="kidney" onclick="selectScan('kidney')">
+      <div class="scan-icon">🫘</div>
+      <div><div style="font-size:12px;font-weight:600;">Kidney</div><div style="font-size:10px;color:var(--text-muted);">CT Scan · RenalCLIP</div></div>
+    </div>
+    <div class="scan-item" data-scan="brain" onclick="selectScan('brain')">
+      <div class="scan-icon">🧠</div>
+      <div><div style="font-size:12px;font-weight:600;">Brain Tumor</div><div style="font-size:10px;color:var(--text-muted);">MRI · ResNet50</div></div>
+    </div>
+    <div style="margin-top:24px;padding:12px;background:color-mix(in srgb,var(--warning) 10%,transparent);border:1px solid var(--warning);border-radius:8px;font-size:11px;color:var(--text);">
+      ⚠️ Upload actual medical images (CT, MRI, dermoscopy, blood smear). Results are screening aids only — always consult a radiologist.
+    </div>
+  </aside>
+
+  <div style="padding:24px;overflow-y:auto;">
+    <div style="max-width:700px;margin:0 auto;">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;" id="scan-title">Lung Cancer Detection</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;" id="scan-desc">Upload a CT scan image. The AI model will classify it as Normal, Benign, or Malignant.</p>
+
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div id="upload-placeholder">
+          <div style="font-size:48px;margin-bottom:12px;">🖼️</div>
+          <p style="font-size:14px;font-weight:600;margin-bottom:6px;">Drop image here or click to browse</p>
+          <p style="font-size:12px;color:var(--text-muted);">Supported: JPG, PNG, DICOM-exported images · Max 50MB</p>
+        </div>
+        <div id="image-preview-container" style="display:none;">
+          <img id="image-preview" class="image-preview" alt="Preview"/>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:8px;" id="file-name"></p>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="onFileSelect(event)"/>
+
+      <div style="display:flex;gap:12px;margin-top:16px;">
+        <button class="btn btn-medical btn-lg" id="analyze-btn" onclick="analyzeImage()" disabled>Analyze Image</button>
+        <button class="btn btn-ghost" onclick="clearImage()">Clear</button>
+      </div>
+
+      <div id="result-container"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js"></script>
+<script src="/js/predict-image.js"></script>
+</body>
+</html>

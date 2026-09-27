@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+
+app:
+  jwt:
+    secret: 4d6e7a3b9f2c1e8a5d0f7b4c2e9a6d3f1b8e5c2a9f7d4b1e8c5a2f9d6b3e0a7
+    expiration: 86400000
+  ollama:
+    models:
+      mental-health: medllama2
+      common-disease: medllama2
+      complex-disease: meditron
+      medicine: qwen3.5:latest
+      embedding: nomic-embed-text:latest
+      fallback: llama3.1:8b
+      guidance: qwen3.5:latest
+  confidence:
+    threshold-common: 80
+    threshold-complex: 85
+    threshold-mental: 80
+  ml-service:
+    base-url: http://localhost:5001

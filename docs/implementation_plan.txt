@@ -1,0 +1,1474 @@
+================================================================================
+                    MedAI — IMPLEMENTATION PLAN
+         AI-Powered Smart Healthcare Platform (Spring Boot)
+================================================================================
+Date: 2026-09-27
+================================================================================
+
+
+================================================================================
+  SECTION 1 — PROJECT OVERVIEW
+================================================================================
+
+MedAI is a unified healthcare web application built on Spring Boot (Java) with
+a modern HTML/CSS/JS frontend. It replaces the reference Django-based HealthHub
+project with a Spring Boot architecture while using locally-hosted Ollama LLM
+models for all AI features (no training required — all pre-trained models).
+
+Core Features:
+  1. Mental Health Chatbot (conversational, memory-aware, cross-session)
+  2. Common Disease Diagnoser Chatbot (conversational, confidence-scored)
+  3. Complex Disease Diagnoser Chatbot (conversational, confidence-scored)
+  4. Medicine Information Chatbot (conversational + single-ask mode)
+  5. Nearby Hospital Finder (live map with routing)
+  6. Personalisation Engine (toggle-able, records all interactions)
+  7. User Authentication & Profile Management
+  8. Light/Dark Theme Toggle
+  9. Report-Based Disease Risk Prediction (6 models via ML forms):
+       - Heart Disease, Stroke, Diabetes, Lung Cancer (risk factors),
+         Kidney Stone, Liver Disease
+       - User fills structured form → ML model outputs risk % →
+         Ollama LLM generates personalised medical guidance
+  10. Image-Based Cancer Diagnosis (5 models via image upload):
+       - Lung Cancer (CT scan), Skin Cancer (dermoscopy),
+         Blood Cancer/Leukemia (blood smear), Kidney (CT scan),
+         Brain Tumor (MRI)
+       - User uploads medical scan → CNN/ViT model classifies condition →
+         Ollama LLM generates personalised guidance + triggers hospital
+         finder if severity is HIGH/CRITICAL
+
+
+================================================================================
+  SECTION 2 — OPEN-SOURCE MODELS (OLLAMA — NO TRAINING NEEDED)
+================================================================================
+
+All AI features use locally-hosted Ollama models. No cloud APIs needed.
+
+┌──────────────────────┬────────────────────────┬───────────────────────────────┐
+│ PURPOSE              │ MODEL TO USE           │ WHY / NOTES                   │
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Mental Health        │ medllama2              │ Medical LLM fine-tuned on     │
+│ Chatbot              │ (ollama pull medllama2)│ clinical data. 7B params.     │
+│                      │                        │ Safe for mental health conv.  │
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Common Disease       │ medllama2              │ Same model, different system  │
+│ Diagnoser            │                        │ prompt for symptom triage.    │
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Complex Disease      │ meditron               │ Adapted from Llama 2 for      │
+│ Diagnoser            │ (ollama pull meditron) │ medical domain. Better for    │
+│                      │                        │ complex clinical reasoning.   │
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Medicine Info        │ qwen3.5:latest         │ Already installed. Strong     │
+│ Chatbot              │ (already available)    │ general + medical knowledge.  │
+│                      │                        │ Use with safety system prompt.│
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Fallback / General   │ llama3.1:8b            │ Already installed. General    │
+│                      │ (already available)    │ purpose fallback model.       │
+├──────────────────────┼────────────────────────┼───────────────────────────────┤
+│ Text Embeddings      │ nomic-embed-text       │ Already installed. Used for   │
+│ (for personalisation)│ (already available)    │ embedding user interactions   │
+│                      │                        │ for personalised retrieval.   │
+└──────────────────────┴────────────────────────┴───────────────────────────────┘
+
+MODELS TO PULL (not yet installed):
+  $ ollama pull medllama2
+  $ ollama pull meditron
+
+MODELS ALREADY AVAILABLE:
+  - qwen3.5:latest (6.6 GB) — medicine info chatbot
+  - llama3.1:8b (4.9 GB) — fallback
+  - nomic-embed-text:latest (274 MB) — embeddings for personalisation
+
+
+================================================================================
+  SECTION 3 — TECHNOLOGY STACK
+================================================================================
+
+BACKEND:
+  - Java 17+
+  - Spring Boot 3.x
+  - Spring AI (spring-ai-starter-model-ollama) — Ollama integration
+  - Spring Security — JWT-based authentication
+  - Spring Data JPA — database ORM
+  - Spring WebSocket / SSE — streaming chat responses
+  - PostgreSQL — primary database (production-grade, supports pgvector)
+  - pgvector extension — vector storage for personalisation embeddings
+  - Flyway — database migrations
+  - Lombok — reduce boilerplate
+
+FRONTEND (served as static resources from Spring Boot):
+  - HTML5 + Vanilla CSS + Vanilla JavaScript (NO framework)
+  - Leaflet.js — interactive maps (open-source, free)
+  - OpenStreetMap tiles — free map tiles
+  - Overpass API — query nearby hospitals from OSM data
+  - Leaflet Routing Machine + OSRM — free routing/directions
+  - Inter + JetBrains Mono fonts (Google Fonts)
+  - CSS custom properties for light/dark theme (inspired by aura-x)
+
+BUILD TOOL:
+  - Maven (pom.xml)
+
+EXTERNAL SERVICES (all free/open-source, no API keys needed):
+  - Ollama (local, port 11434)
+  - OpenStreetMap / Overpass API (free, no key)
+  - OSRM (free routing, no key)
+
+
+================================================================================
+  SECTION 4 — PROJECT STRUCTURE
+================================================================================
+
+D://medai/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── java/com/medai/
+│   │   │   ├── MedaiApplication.java              — Spring Boot entry point
+│   │   │   │
+│   │   │   ├── config/
+│   │   │   │   ├── SecurityConfig.java             — JWT auth config
+│   │   │   │   ├── WebSocketConfig.java            — WebSocket for chat
+│   │   │   │   ├── OllamaConfig.java               — Ollama connection config
+│   │   │   │   └── CorsConfig.java                 — CORS settings
+│   │   │   │
+│   │   │   ├── model/                              — JPA Entities
+│   │   │   │   ├── User.java                       — user profile
+│   │   │   │   ├── ChatSession.java                — chat session metadata
+│   │   │   │   ├── ChatMessage.java                — individual messages
+│   │   │   │   ├── ConfidenceScore.java            — disease confidence store
+│   │   │   │   ├── UserInteraction.java            — all interaction logs
+│   │   │   │   └── UserPreference.java             — personalisation prefs
+│   │   │   │
+│   │   │   ├── repository/                         — Spring Data JPA repos
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   ├── ChatSessionRepository.java
+│   │   │   │   ├── ChatMessageRepository.java
+│   │   │   │   ├── ConfidenceScoreRepository.java
+│   │   │   │   ├── UserInteractionRepository.java
+│   │   │   │   └── UserPreferenceRepository.java
+│   │   │   │
+│   │   │   ├── service/
+│   │   │   │   ├── AuthService.java                — login/register/JWT
+│   │   │   │   ├── ChatService.java                — orchestrates chatbot logic
+│   │   │   │   ├── MentalHealthService.java        — mental health chatbot
+│   │   │   │   ├── CommonDiseaseService.java       — common disease diagnoser
+│   │   │   │   ├── ComplexDiseaseService.java      — complex disease diagnoser
+│   │   │   │   ├── MedicineService.java            — medicine info chatbot
+│   │   │   │   ├── ConfidenceEngine.java           — confidence score logic
+│   │   │   │   ├── PersonalisationService.java     — user adaptation engine
+│   │   │   │   ├── HospitalService.java            — nearby hospital logic
+│   │   │   │   └── OllamaService.java              — wraps Spring AI ChatClient
+│   │   │   │
+│   │   │   ├── controller/
+│   │   │   │   ├── AuthController.java             — /api/auth/*
+│   │   │   │   ├── ChatController.java             — /api/chat/*
+│   │   │   │   ├── MedicineController.java         — /api/medicine/*
+│   │   │   │   ├── HospitalController.java         — /api/hospitals/*
+│   │   │   │   ├── UserController.java             — /api/user/*
+│   │   │   │   └── PersonalisationController.java  — /api/personalisation/*
+│   │   │   │
+│   │   │   ├── dto/                                — Request/Response DTOs
+│   │   │   │   ├── ChatRequest.java
+│   │   │   │   ├── ChatResponse.java
+│   │   │   │   ├── ConfidenceUpdate.java
+│   │   │   │   ├── LoginRequest.java
+│   │   │   │   ├── RegisterRequest.java
+│   │   │   │   └── HospitalResult.java
+│   │   │   │
+│   │   │   └── util/
+│   │   │       ├── JwtUtil.java                    — JWT token generation
+│   │   │       └── PromptTemplates.java            — system prompts per bot
+│   │   │
+│   │   └── resources/
+│   │       ├── application.yml                     — main config
+│   │       ├── static/                             — FRONTEND FILES
+│   │       │   ├── index.html                      — landing/home page
+│   │       │   ├── login.html                      — auth page
+│   │       │   ├── dashboard.html                  — main dashboard
+│   │       │   ├── chat.html                       — unified chat interface
+│   │       │   ├── medicine.html                   — medicine info page
+│   │       │   ├── hospitals.html                  — nearby hospitals map
+│   │       │   ├── css/
+│   │       │   │   ├── base.css                    — reset, theme tokens, fonts
+│   │       │   │   ├── components.css              — cards, buttons, badges
+│   │       │   │   ├── chat.css                    — chat bubble styles
+│   │       │   │   ├── map.css                     — map-specific styles
+│   │       │   │   └── responsive.css              — mobile breakpoints
+│   │       │   ├── js/
+│   │       │   │   ├── app.js                      — global init, theme toggle
+│   │       │   │   ├── auth.js                     — login/register logic
+│   │       │   │   ├── chat.js                     — chat UI + WebSocket
+│   │       │   │   ├── medicine.js                 — medicine search UI
+│   │       │   │   ├── hospitals.js                — map + Leaflet + routing
+│   │       │   │   ├── personalisation.js          — toggle + adaptation UI
+│   │       │   │   └── confidence.js               — confidence score display
+│   │       │   └── img/                            — icons, logo, assets
+│   │       │
+│   │       └── db/migration/                       — Flyway SQL migrations
+│   │           ├── V1__create_users.sql
+│   │           ├── V2__create_chat_tables.sql
+│   │           ├── V3__create_confidence_scores.sql
+│   │           ├── V4__create_interactions.sql
+│   │           └── V5__create_preferences.sql
+│   │
+│   └── test/java/com/medai/                        — Unit & integration tests
+│       ├── service/
+│       │   ├── ChatServiceTest.java
+│       │   ├── ConfidenceEngineTest.java
+│       │   └── PersonalisationServiceTest.java
+│       └── controller/
+│           ├── AuthControllerTest.java
+│           └── ChatControllerTest.java
+│
+└── docs/
+    ├── implementation_plan.txt                     — THIS FILE
+    └── content/idea.txt                            — original idea doc
+
+
+================================================================================
+  SECTION 5 — DETAILED FEATURE DESIGN
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  5.1  CHATBOT ARCHITECTURE (Shared across all chatbot features)
+────────────────────────────────────────────────────────────────────────────────
+
+All chatbots share a common architecture:
+
+  User Input → ChatController → ChatService → [Specific Service] → OllamaService
+                                                     ↓
+                                              ConfidenceEngine
+                                                     ↓
+                                              Database (persist)
+                                                     ↓
+                                              Response → User
+
+CONVERSATION MEMORY (cross-session):
+  - Every message (user + assistant) is stored in `chat_messages` table
+  - Linked to `chat_sessions` table, which tracks session metadata
+  - When a new session starts, the system loads the LAST N messages from
+    ALL previous sessions for that user + chatbot type
+  - These are injected into the Ollama prompt as conversation history
+  - This makes the chatbot memory-aware across sessions
+  - Spring AI's ChatMemory with JdbcChatMemory advisor handles this
+
+DOCTOR-LIKE BEHAVIOR:
+  - System prompt instructs the model to behave as a doctor
+  - Must ASK questions one at a time, not dump information
+  - Must wait for user response before asking the next question
+  - Must not diagnose prematurely — gather enough symptoms first
+  - System prompt template (in PromptTemplates.java):
+
+    """
+    You are Dr. MedAI, a compassionate and thorough medical professional.
+    RULES:
+    1. Ask ONE question at a time about the patient's symptoms
+    2. Wait for the patient's response before asking the next question
+    3. Never give a diagnosis until you have asked at least 5 relevant questions
+    4. After each response, internally update your confidence about possible
+       conditions (you will receive a function call for this)
+    5. When confidence exceeds 80% for any condition, provide your assessment
+    6. Always recommend seeing a real doctor for serious conditions
+    7. Be empathetic, clear, and use simple language
+    """
+
+CONFIDENCE SCORE ENGINE (ConfidenceEngine.java):
+  - Maintains a map of {disease/condition → confidence_percentage}
+  - Stored in `confidence_scores` table per user per session
+  - After each user response, the LLM is asked (via tool/function calling):
+      "Based on the conversation so far, update confidence scores for
+       suspected conditions. Return JSON: [{condition, confidence, reasoning}]"
+  - The ConfidenceEngine parses this and updates the DB
+  - Threshold: when any condition reaches ≥ 80% confidence:
+      → The chatbot delivers the prediction
+      → Provides healthcare guidance
+      → Suggests nearby hospitals if condition is serious (triggers hospital API)
+  - Confidence scores are shown in a sidebar widget in the chat UI
+
+STREAMING RESPONSES:
+  - Use Server-Sent Events (SSE) via Spring's SseEmitter
+  - Endpoint: GET /api/chat/stream?sessionId=...
+  - Chat responses stream token-by-token for a natural feel
+  - Frontend uses EventSource API to receive and render tokens
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.2  MENTAL HEALTH CHATBOT
+────────────────────────────────────────────────────────────────────────────────
+
+Model: medllama2 (ollama pull medllama2)
+Endpoint: POST /api/chat/mental-health
+
+Behavior:
+  - Acts as a compassionate mental health counselor
+  - Asks about mood, sleep, appetite, social behavior, stress, etc.
+  - Tracks confidence scores for: depression, anxiety, PTSD, bipolar,
+    OCD, ADHD, insomnia, burnout, grief, etc.
+  - When threshold met → provides coping strategies + professional referral
+  - SAFETY: system prompt includes crisis detection keywords
+    → If suicidal ideation detected, immediately provide crisis hotline numbers
+    → Never attempt to treat crisis situations via chatbot
+
+Memory: Full cross-session memory. Chatbot remembers past conversations
+  and can say things like "Last time we spoke, you mentioned feeling
+  overwhelmed at work. How has that been?"
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.3  COMMON DISEASE DIAGNOSER
+────────────────────────────────────────────────────────────────────────────────
+
+Model: medllama2
+Endpoint: POST /api/chat/common-disease
+
+Behavior:
+  - Handles common ailments: cold, flu, allergies, headache, fever, stomach
+    issues, skin rashes, minor infections, etc.
+  - Asks symptom questions one by one
+  - Tracks confidence for multiple possible conditions simultaneously
+  - When threshold met → provides:
+      → Disease name + confidence %
+      → Suggested OTC medications
+      → Home remedies
+      → When to see a doctor
+  - If symptoms suggest something serious → escalates to complex diagnoser
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.4  COMPLEX DISEASE DIAGNOSER
+────────────────────────────────────────────────────────────────────────────────
+
+Model: meditron (ollama pull meditron)
+Endpoint: POST /api/chat/complex-disease
+
+Behavior:
+  - Handles serious conditions: heart disease, diabetes indicators, stroke
+    symptoms, cancer warning signs, kidney/liver issues, etc.
+  - More thorough questioning (asks about family history, lifestyle, etc.)
+  - Confidence threshold set higher: 85% before prediction
+  - When threshold met → provides:
+      → Condition name + confidence %
+      → Urgency level (low / medium / high / emergency)
+      → Recommended specialist type
+      → If HIGH/EMERGENCY → auto-triggers nearby hospital finder with
+        the user's location, showing relevant hospital specialties
+      → Recommended diagnostic tests
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.5  MEDICINE INFORMATION CHATBOT
+────────────────────────────────────────────────────────────────────────────────
+
+Model: qwen3.5:latest (already installed)
+Endpoint: POST /api/medicine/chat (conversational mode)
+          POST /api/medicine/query (single-ask mode)
+
+TWO MODES:
+  A) Conversational Mode:
+     - User can have a back-and-forth about medications
+     - "What are the side effects of ibuprofen?"
+     - "Can I take it with paracetamol?"
+     - "What about if I'm pregnant?"
+     - Memory-aware within the session
+
+  B) Single-Ask Mode:
+     - User types a question, gets a single comprehensive response
+     - No follow-up context maintained
+     - Toggle between modes in the UI
+
+SAFETY GUARDRAILS (in system prompt):
+  - Never recommend specific dosages without knowing patient details
+  - Always say "consult your doctor/pharmacist for exact dosage"
+  - Never provide information about drug abuse or harmful combinations
+  - Flag dangerous drug interactions prominently
+  - Do not provide information about controlled substances procurement
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.6  NEARBY HOSPITAL FINDER
+────────────────────────────────────────────────────────────────────────────────
+
+NO external paid API needed. All free/open-source.
+
+Technologies:
+  - Leaflet.js — map rendering (CDN, no install needed)
+  - OpenStreetMap — free map tiles
+  - Overpass API — query hospitals from OSM data (free, no API key)
+  - Leaflet Routing Machine + OSRM — free routing/navigation
+  - HTML5 Geolocation API — get user's current location
+
+Frontend Page: hospitals.html
+
+Flow:
+  1. Page loads → request user's GPS location via Geolocation API
+  2. Send coordinates to backend: GET /api/hospitals/nearby?lat=X&lon=Y&radius=5000
+  3. Backend calls Overpass API:
+     Query: [out:json];(node(around:5000,LAT,LON)["amenity"="hospital"];
+            way(around:5000,LAT,LON)["amenity"="hospital"];);out center;
+  4. Backend parses response, extracts: name, lat, lon, phone (if available),
+     address, website, emergency status
+  5. Returns JSON list to frontend
+  6. Frontend renders:
+     - User location as a blue pin
+     - Each hospital as a red pin with popup showing name/phone/address
+     - Click hospital pin → show route from user to hospital
+     - Route updates dynamically (recalculates if user moves)
+  7. Hospital list also shown as a sidebar panel with:
+     - Distance from user
+     - Contact number (if available from OSM data)
+     - Click to navigate button
+
+INTEGRATION WITH CHATBOTS:
+  - When disease diagnoser detects a serious condition (HIGH/EMERGENCY urgency):
+    → ChatResponse includes a field: triggerHospitalFinder = true
+    → Frontend auto-opens the hospital finder panel
+    → Hospitals are filtered by relevant specialty if available
+    → Urgency banner shown: "Based on your symptoms, we recommend visiting
+      a hospital. Here are the nearest ones:"
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.7  PERSONALISATION ENGINE
+────────────────────────────────────────────────────────────────────────────────
+
+CORE CONCEPT:
+  Every user interaction is logged. The system adapts over time.
+
+Toggle: Users can switch between:
+  - PERSONALISED MODE: chatbots use past interaction history to tailor responses
+  - GENERAL MODE: chatbots behave as if talking to a new user
+
+Storage:
+  - `user_interactions` table: logs every interaction with metadata
+    (timestamp, feature_used, input_summary, output_summary, sentiment)
+  - `user_preferences` table: derived preferences
+    (preferred_language_style, known_conditions, medication_history, etc.)
+  - Vector embeddings (via nomic-embed-text) stored in pgvector
+    for semantic retrieval of relevant past interactions
+
+How Personalisation Works:
+  1. User sends a message in any chatbot
+  2. If personalisation is ON:
+     a. Embed the user's message using nomic-embed-text
+     b. Query pgvector for top-5 similar past interactions
+     c. Inject relevant past context into the system prompt:
+        "Patient history context: Previously reported chronic headaches
+         (2 months ago), takes ibuprofen regularly, allergic to aspirin."
+     d. LLM generates a personalised response
+  3. If personalisation is OFF:
+     a. Skip steps 2a-2c
+     b. LLM generates a generic response
+
+UI Toggle:
+  - Persistent toggle switch in the top navbar
+  - Stored in localStorage + synced to server
+  - Visual indicator: "🔵 Personalised" or "⚪ General"
+
+
+────────────────────────────────────────────────────────────────────────────────
+  5.8  AUTHENTICATION & USER MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+Endpoint: /api/auth/register, /api/auth/login, /api/auth/logout
+
+User Model:
+  - username, email, password (BCrypt hashed)
+  - full_name, date_of_birth, phone, gender
+  - created_at, last_login
+  - personalisation_enabled (boolean, default true)
+
+Auth Flow:
+  - Register → validate → BCrypt hash password → save → return JWT
+  - Login → validate credentials → return JWT
+  - JWT stored in httpOnly cookie
+  - All /api/* endpoints (except /api/auth/*) require valid JWT
+
+Profile Page:
+  - View/edit profile details
+  - View interaction history
+  - Toggle personalisation
+  - Export/delete personal data (GDPR-like feature)
+
+
+================================================================================
+  SECTION 6 — FRONTEND DESIGN (Light + Dark Mode)
+================================================================================
+
+Design inspiration: aura-x frontend (dark/light theme with CSS variables)
+
+THEME SYSTEM (base.css):
+  Uses CSS custom properties, toggled via .dark / .light class on <html>
+
+  Dark Theme:
+    --bg:          #080c14
+    --bg-card:     #161b27
+    --border:      #1e2a3d
+    --text:        #e2e8f0
+    --accent:      #3b82f6       (blue)
+    --success:     #34d399       (green — for positive health indicators)
+    --warning:     #fbbf24       (amber — for caution)
+    --danger:      #f87171       (red — for critical alerts)
+    --medical:     #06b6d4       (cyan — medical accent color)
+
+  Light Theme:
+    --bg:          #f0f4f8
+    --bg-card:     #ffffff
+    --border:      #e2e8f0
+    --text:        #1a202c
+    --accent:      #2563eb
+    (... corresponding light variants)
+
+FONTS:
+  - Inter — primary UI font
+  - JetBrains Mono — for medical data, stats, confidence scores
+
+KEY UI COMPONENTS:
+  - Card containers with subtle borders and hover effects
+  - Chat bubbles (user = accent color right-aligned, bot = card left-aligned)
+  - Confidence score sidebar with animated progress bars
+  - Glassmorphism panels for dashboard stats
+  - Smooth page transitions
+  - Responsive layout (mobile-first)
+  - Floating theme toggle button (sun/moon icon)
+  - Animated typing indicator for bot responses
+  - Toast notifications for alerts
+
+PAGES:
+  1. Landing Page (index.html) — hero section, feature cards, CTA
+  2. Login/Register (login.html) — split-panel auth form
+  3. Dashboard (dashboard.html) — overview cards, recent interactions
+  4. Chat Interface (chat.html) — sidebar for bot selection, main chat area,
+     confidence score panel
+  5. Medicine Info (medicine.html) — search bar + chat area + mode toggle
+  6. Hospital Map (hospitals.html) — full-width map + sidebar list
+  7. Profile (accessible from dashboard)
+
+
+================================================================================
+  SECTION 7 — API ENDPOINTS
+================================================================================
+
+AUTH:
+  POST   /api/auth/register          — register new user
+  POST   /api/auth/login             — login, returns JWT
+  POST   /api/auth/logout            — invalidate session
+
+CHAT:
+  POST   /api/chat/mental-health     — send message to mental health bot
+  POST   /api/chat/common-disease    — send message to common disease bot
+  POST   /api/chat/complex-disease   — send message to complex disease bot
+  GET    /api/chat/stream            — SSE stream for bot responses
+  GET    /api/chat/sessions          — list user's chat sessions
+  GET    /api/chat/sessions/{id}     — get full conversation history
+  GET    /api/chat/confidence/{sid}  — get confidence scores for a session
+
+MEDICINE:
+  POST   /api/medicine/chat          — conversational medicine query
+  POST   /api/medicine/query         — single-ask medicine query
+
+HOSPITALS:
+  GET    /api/hospitals/nearby       — get nearby hospitals (lat, lon, radius)
+
+USER:
+  GET    /api/user/profile           — get user profile
+  PUT    /api/user/profile           — update profile
+  GET    /api/user/interactions      — get interaction history
+
+PERSONALISATION:
+  PUT    /api/personalisation/toggle — toggle personalisation on/off
+  GET    /api/personalisation/status — get current personalisation status
+
+
+================================================================================
+  SECTION 8 — DATABASE SCHEMA
+================================================================================
+
+TABLE: users
+  id              BIGSERIAL PRIMARY KEY
+  username        VARCHAR(50) UNIQUE NOT NULL
+  email           VARCHAR(100) UNIQUE NOT NULL
+  password_hash   VARCHAR(255) NOT NULL
+  full_name       VARCHAR(100)
+  date_of_birth   DATE
+  phone           VARCHAR(20)
+  gender          VARCHAR(10)
+  personalisation BOOLEAN DEFAULT TRUE
+  created_at      TIMESTAMP DEFAULT NOW()
+  last_login      TIMESTAMP
+
+TABLE: chat_sessions
+  id              BIGSERIAL PRIMARY KEY
+  user_id         BIGINT REFERENCES users(id)
+  bot_type        VARCHAR(30) NOT NULL
+                  -- values: MENTAL_HEALTH, COMMON_DISEASE, COMPLEX_DISEASE, MEDICINE
+  started_at      TIMESTAMP DEFAULT NOW()
+  ended_at        TIMESTAMP
+  is_active       BOOLEAN DEFAULT TRUE
+
+TABLE: chat_messages
+  id              BIGSERIAL PRIMARY KEY
+  session_id      BIGINT REFERENCES chat_sessions(id)
+  role            VARCHAR(10) NOT NULL  -- USER, ASSISTANT, SYSTEM
+  content         TEXT NOT NULL
+  timestamp       TIMESTAMP DEFAULT NOW()
+
+TABLE: confidence_scores
+  id              BIGSERIAL PRIMARY KEY
+  session_id      BIGINT REFERENCES chat_sessions(id)
+  condition_name  VARCHAR(100) NOT NULL
+  confidence_pct  DECIMAL(5,2) NOT NULL
+  reasoning       TEXT
+  updated_at      TIMESTAMP DEFAULT NOW()
+  UNIQUE(session_id, condition_name)
+
+TABLE: user_interactions
+  id              BIGSERIAL PRIMARY KEY
+  user_id         BIGINT REFERENCES users(id)
+  feature         VARCHAR(30) NOT NULL
+  input_summary   TEXT
+  output_summary  TEXT
+  embedding       VECTOR(768)           -- pgvector, nomic-embed-text dim
+  created_at      TIMESTAMP DEFAULT NOW()
+
+TABLE: user_preferences
+  id              BIGSERIAL PRIMARY KEY
+  user_id         BIGINT REFERENCES users(id) UNIQUE
+  known_conditions TEXT[]                -- PostgreSQL array
+  medication_hist TEXT[]
+  allergies       TEXT[]
+  language_style  VARCHAR(20) DEFAULT 'simple'
+  updated_at      TIMESTAMP DEFAULT NOW()
+
+
+================================================================================
+  SECTION 9 — IMPLEMENTATION PHASES
+================================================================================
+
+PHASE 1 — PROJECT SETUP (Day 1-2)
+  [ ] Initialize Spring Boot project (Maven, Java 17)
+  [ ] Add dependencies: Spring Web, Spring Data JPA, Spring Security,
+      Spring AI Ollama, PostgreSQL driver, Flyway, Lombok, WebSocket
+  [ ] Configure application.yml (DB, Ollama, JWT secret)
+  [ ] Set up PostgreSQL database + pgvector extension
+  [ ] Pull required Ollama models (medllama2, meditron)
+  [ ] Create Flyway migration scripts for all tables
+  [ ] Set up project structure (packages: config, model, repo, service,
+      controller, dto, util)
+
+PHASE 2 — AUTH + USER MANAGEMENT (Day 2-3)
+  [ ] Implement User entity + repository
+  [ ] Implement AuthService (register, login, JWT generation)
+  [ ] Implement JwtUtil + SecurityConfig
+  [ ] Implement AuthController endpoints
+  [ ] Create login.html frontend page
+
+PHASE 3 — CORE CHAT INFRASTRUCTURE (Day 3-5)
+  [ ] Implement OllamaService (wraps Spring AI ChatClient)
+  [ ] Implement ChatSession + ChatMessage entities + repositories
+  [ ] Implement ChatService (session management, message persistence,
+      history retrieval for cross-session memory)
+  [ ] Implement SSE streaming endpoint
+  [ ] Implement PromptTemplates with system prompts for each bot
+  [ ] Implement ConfidenceEngine + ConfidenceScore entity
+  [ ] Create chat.html frontend with WebSocket/SSE integration
+  [ ] Create chat bubble UI, typing indicator, bot selector sidebar
+
+PHASE 4 — INDIVIDUAL CHATBOTS (Day 5-8)
+  [ ] Implement MentalHealthService with medllama2 + safety prompts
+  [ ] Implement CommonDiseaseService with medllama2 + symptom prompts
+  [ ] Implement ComplexDiseaseService with meditron + clinical prompts
+  [ ] Implement MedicineService with qwen3.5 + safety guardrails
+  [ ] Wire up confidence score tracking for disease chatbots
+  [ ] Implement threshold detection + prediction delivery
+  [ ] Create medicine.html with dual-mode UI (chat + single-ask)
+
+PHASE 5 — HOSPITAL FINDER (Day 8-10)
+  [ ] Implement HospitalController + HospitalService
+  [ ] Implement Overpass API integration (HTTP client)
+  [ ] Create hospitals.html with Leaflet.js map
+  [ ] Implement user location detection
+  [ ] Implement hospital pin rendering with popups
+  [ ] Implement route display with Leaflet Routing Machine
+  [ ] Implement dynamic route updates
+  [ ] Integrate hospital finder trigger from chatbot critical alerts
+
+PHASE 6 — PERSONALISATION (Day 10-12)
+  [ ] Implement UserInteraction entity + repository
+  [ ] Implement embedding generation via nomic-embed-text
+  [ ] Implement pgvector similarity search
+  [ ] Implement PersonalisationService (toggle, context injection)
+  [ ] Implement PersonalisationController
+  [ ] Add toggle switch to frontend navbar
+  [ ] Wire personalisation context into all chatbot system prompts
+
+PHASE 7 — FRONTEND POLISH (Day 12-14)
+  [ ] Implement full dark/light theme with CSS variables
+  [ ] Create landing page with hero section + feature cards
+  [ ] Create dashboard with interaction stats
+  [ ] Add animations, transitions, glassmorphism effects
+  [ ] Implement responsive design (mobile breakpoints)
+  [ ] Add confidence score sidebar widget with progress bars
+  [ ] Test all pages in both themes
+
+PHASE 8 — TESTING + INTEGRATION (Day 14-16)
+  [ ] Unit tests for ConfidenceEngine
+  [ ] Unit tests for PersonalisationService
+  [ ] Integration tests for ChatController
+  [ ] Integration tests for AuthController
+  [ ] End-to-end test of full chat flow
+  [ ] Test hospital finder with real location
+  [ ] Test cross-session memory
+  [ ] Test personalisation toggle behavior
+
+
+================================================================================
+  SECTION 10 — KEY MAVEN DEPENDENCIES (pom.xml)
+================================================================================
+
+<dependencies>
+  <!-- Spring Boot Starters -->
+  spring-boot-starter-web
+  spring-boot-starter-data-jpa
+  spring-boot-starter-security
+  spring-boot-starter-websocket
+  spring-boot-starter-validation
+
+  <!-- Spring AI for Ollama -->
+  spring-ai-starter-model-ollama
+
+  <!-- Database -->
+  postgresql (runtime)
+  flyway-core
+  flyway-database-postgresql
+
+  <!-- pgvector for embeddings -->
+  com.pgvector:pgvector (0.1.6+)
+
+  <!-- JWT -->
+  io.jsonwebtoken:jjwt-api (0.12.x)
+  io.jsonwebtoken:jjwt-impl (runtime)
+  io.jsonwebtoken:jjwt-jackson (runtime)
+
+  <!-- Utility -->
+  lombok (compile-only)
+
+  <!-- Testing -->
+  spring-boot-starter-test
+  spring-security-test
+</dependencies>
+
+
+================================================================================
+  SECTION 11 — OLLAMA CONFIGURATION (application.yml)
+================================================================================
+
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          temperature: 0.7
+          num-predict: 1024
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medai
+    username: medai
+    password: medai_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: <generated-secret-key>
+    expiration: 86400000   # 24 hours
+
+  ollama:
+    models:
+      mental-health: medllama2
+      common-disease: medllama2
+      complex-disease: meditron
+      medicine: qwen3.5:latest
+      embedding: nomic-embed-text:latest
+      fallback: llama3.1:8b
+
+  confidence:
+    threshold-common: 80
+    threshold-complex: 85
+    threshold-mental: 80
+
+
+================================================================================
+  SECTION 12 — VERIFICATION PLAN
+================================================================================
+
+12.1  AUTOMATED TESTS (run via Maven):
+  Command: mvn test -pl . (from D://medai)
+
+  Tests to write:
+  - ConfidenceEngineTest: verify score updates, threshold detection, JSON parsing
+  - PersonalisationServiceTest: verify toggle, context injection, embedding lookup
+  - AuthControllerTest: verify register/login/JWT validation
+  - ChatControllerTest: verify message sending, session creation, history retrieval
+
+12.2  MANUAL VERIFICATION:
+  - Start the app: mvn spring-boot:run
+  - Open http://localhost:8080 in browser
+  - Register a new user → verify JWT cookie is set
+  - Open mental health chatbot → verify it asks questions one-by-one
+  - Answer 5+ questions → verify confidence scores appear in sidebar
+  - Close browser, reopen, start new session → verify it remembers past context
+  - Toggle personalisation OFF → verify responses become generic
+  - Open hospital finder → verify map loads with user location
+  - Click a hospital pin → verify route is displayed
+  - Test dark/light theme toggle on all pages
+  - Test medicine chatbot in both conversational and single-ask modes
+
+12.3  OLLAMA CONNECTIVITY TEST:
+  Command: curl http://localhost:11434/api/tags
+  Expected: JSON listing all installed models
+
+  Command: curl -X POST http://localhost:11434/api/generate \
+           -d '{"model":"medllama2","prompt":"What are symptoms of flu?"}'
+  Expected: Streamed JSON response with medical information
+
+
+================================================================================
+  SECTION 13 — PRETRAINED ML MODELS (REPORT + IMAGE BASED PREDICTION)
+================================================================================
+
+This section covers the 11 pretrained models for structured disease prediction
+and image-based cancer diagnosis. These are served by a separate Python
+microservice that Spring Boot calls via REST.
+
+────────────────────────────────────────────────────────────────────────────────
+  13.1  PART A — REPORT-BASED DISEASE PREDICTION (6 models, tabular input)
+────────────────────────────────────────────────────────────────────────────────
+
+User fills a structured health form → ML model outputs risk probability % →
+Ollama LLM provides personalised medical guidance based on the prediction.
+
+┌────┬───────────────────────┬────────────────────────────────────────────────────────┬────────────────┬──────────────┐
+│ #  │ Disease               │ Pretrained Model / Source                              │ Algorithm      │ Format       │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 1  │ Heart Disease         │ Juan12Dev/heart-risk-ai-v4                             │ Stacked        │ .pkl         │
+│    │                       │ https://huggingface.co/Juan12Dev/heart-risk-ai-v4      │ Ensemble       │ (joblib)     │
+│    │                       │ (RF + XGBoost + LightGBM + CatBoost + GBM + LR)       │                │              │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 2  │ Stroke                │ emlacodeuse/ml-stroke-prediction                       │ RF + SMOTE     │ .pkl         │
+│    │                       │ https://huggingface.co/emlacodeuse/ml-stroke-prediction│ (class balance)│ (joblib)     │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 3  │ Diabetes              │ shabari-vignesh8/Diabetes-prediction                   │ Ensemble       │ .pkl         │
+│    │                       │ https://huggingface.co/shabari-vignesh8/               │ (Pima dataset) │ (joblib)     │
+│    │                       │ Diabetes-prediction                                    │                │              │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 4  │ Lung Cancer           │ Dataset: nateraw/lung-cancer (HuggingFace)             │ XGBoost        │ .pkl         │
+│    │ (risk factor based)   │ → Train 10-min XGBoost model with Python script        │ Classifier     │ (joblib)     │
+│    │                       │   provided in ml_service/train/train_lung.py           │                │              │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 5  │ Kidney Stone          │ Dataset: Euniceyeee/kidney-ct-abnormality (HuggingFace)│ Random Forest  │ .pkl         │
+│    │ (clinical inputs)     │ → Train RF model with script in                        │ Classifier     │ (joblib)     │
+│    │                       │   ml_service/train/train_kidney_tabular.py             │                │              │
+├────┼───────────────────────┼────────────────────────────────────────────────────────┼────────────────┼──────────────┤
+│ 6  │ Liver Disease         │ Dataset: Francesco/liver-disease (HuggingFace)         │ XGBoost /      │ .pkl         │
+│    │                       │ → Train XGBoost model with script in                   │ LightGBM       │ (joblib)     │
+│    │                       │   ml_service/train/train_liver.py                      │                │              │
+└────┴───────────────────────┴────────────────────────────────────────────────────────┴────────────────┴──────────────┘
+
+INPUT PARAMETERS PER MODEL:
+
+  1. Heart Disease (13 params):
+     age, sex, chest_pain_type, resting_bp, cholesterol, fasting_blood_sugar,
+     resting_ecg, max_heart_rate, exercise_angina, st_depression,
+     slope_of_st, num_vessels, thal
+
+  2. Stroke (10 params):
+     age, gender, hypertension, heart_disease_history, ever_married,
+     work_type, residence_type, avg_glucose_level, bmi, smoking_status
+
+  3. Diabetes (8 params):
+     pregnancies, glucose, blood_pressure, skin_thickness,
+     insulin, bmi, diabetes_pedigree_function, age
+
+  4. Lung Cancer / Risk (15 params):
+     age, gender, air_pollution, alcohol_use, dust_allergy,
+     occupational_hazards, genetic_risk, chronic_lung_disease,
+     balanced_diet, obesity, smoking, passive_smoker,
+     chest_pain, coughing_of_blood, fatigue
+
+  5. Kidney Stone (6 params):
+     urine_gravity, urine_ph, urine_osmolality,
+     urine_conductivity, urea, calcium
+
+  6. Liver Disease (10 params):
+     age, gender, total_bilirubin, direct_bilirubin,
+     alkaline_phosphotase, alamine_aminotransferase,
+     aspartate_aminotransferase, total_proteins,
+     albumin, albumin_globulin_ratio
+
+OUTPUT FORMAT (all 6 models):
+  {
+    "disease": "Heart Disease",
+    "risk_probability": 0.73,         // 0.0 to 1.0
+    "risk_level": "HIGH",              // LOW / MEDIUM / HIGH / CRITICAL
+    "risk_percentage": "73%",
+    "model_used": "Juan12Dev/heart-risk-ai-v4",
+    "guidance_requested": true         // triggers Ollama guidance layer
+  }
+
+
+────────────────────────────────────────────────────────────────────────────────
+  13.2  PART B — IMAGE-BASED CANCER DIAGNOSIS (5 models, medical image input)
+────────────────────────────────────────────────────────────────────────────────
+
+User uploads a medical image → CNN/ViT model classifies the condition →
+returns predicted class + confidence % → Ollama LLM provides guidance.
+
+┌────┬──────────────────────────┬────────────────────────────────────────────────────────┬──────────────────────┬───────────────────────────────────────────────┐
+│ #  │ Cancer Type              │ Pretrained Model / Source                              │ Architecture         │ Output Classes                                │
+├────┼──────────────────────────┼────────────────────────────────────────────────────────┼──────────────────────┼───────────────────────────────────────────────┤
+│ 7  │ Lung Cancer              │ jawbra/lungevaty                                       │ Transformer          │ Normal / Benign / Malignant                   │
+│    │ (CT scan image)          │ https://huggingface.co/jawbra/lungevaty                │ (LDCT-based)         │ Confidence threshold: > 80%                   │
+├────┼──────────────────────────┼────────────────────────────────────────────────────────┼──────────────────────┼───────────────────────────────────────────────┤
+│ 8  │ Skin Cancer              │ Miguel764/efficientnetv2s-skin-cancer-classifier        │ EfficientNetV2S      │ 7 lesion types (Benign / Malignant subtypes)  │
+│    │ (dermoscopy image)       │ https://huggingface.co/Miguel764/                      │ (SOTA 2024/25)       │ Confidence threshold: > 70%                   │
+│    │                          │ efficientnetv2s-skin-cancer-classifier                 │                      │                                               │
+├────┼──────────────────────────┼────────────────────────────────────────────────────────┼──────────────────────┼───────────────────────────────────────────────┤
+│ 9  │ Blood Cancer / Leukemia  │ LeukemiaAttri (MICCAI 2024)                            │ CNN / YOLOv8         │ Benign / [Malignant] early Pre-B /            │
+│    │ (blood smear image)      │ https://github.com/intelligentMachines-ITU/            │ on blood smear       │ [Malignant] Pre-B / [Malignant] Pro-B         │
+│    │                          │ Blood-Cancer-Dataset-Lukemia-Attri-MICCAI-2024         │                      │ Confidence threshold: > 70%                   │
+├────┼──────────────────────────┼────────────────────────────────────────────────────────┼──────────────────────┼───────────────────────────────────────────────┤
+│ 10 │ Kidney (CT scan)         │ taoyh/RenalCLIP                                        │ 3D Vision-Language   │ Cyst / Normal / Stone / Tumor                 │
+│    │                          │ https://huggingface.co/taoyh/RenalCLIP                 │ Model (CT scans)     │ Confidence threshold: > 80%                   │
+├────┼──────────────────────────┼────────────────────────────────────────────────────────┼──────────────────────┼───────────────────────────────────────────────┤
+│ 11 │ Brain Tumor (MRI)        │ Abuzaid01/brain-tumor-resnet50-classifier               │ ResNet50             │ Glioma / Meningioma / Pituitary / No Tumor    │
+│    │                          │ https://huggingface.co/Abuzaid01/                      │ fine-tuned MRI       │ Confidence threshold: > 75%                   │
+│    │                          │ brain-tumor-resnet50-classifier                        │ 224×224 input        │                                               │
+└────┴──────────────────────────┴────────────────────────────────────────────────────────┴──────────────────────┴───────────────────────────────────────────────┘
+
+OUTPUT FORMAT (all 5 image models):
+  {
+    "cancer_type": "Brain Tumor",
+    "predicted_class": "Glioma",
+    "confidence": 0.87,                // 0.0 to 1.0
+    "confidence_pct": "87%",
+    "above_threshold": true,
+    "image_type_required": "MRI",
+    "model_used": "Abuzaid01/brain-tumor-resnet50-classifier",
+    "guidance_requested": true         // triggers Ollama guidance layer
+  }
+
+
+================================================================================
+  SECTION 14 — PYTHON ML MICROSERVICE ARCHITECTURE
+================================================================================
+
+Since Spring Boot (Java) cannot natively run .pkl / .h5 / PyTorch models,
+a lightweight Python microservice runs alongside Spring Boot.
+
+ARCHITECTURE OVERVIEW:
+  ┌────────────────────────────────┐
+  │   Spring Boot (port 8080)       │
+  │   (Java — main application)     │
+  │                                │
+  │  ML Prediction Controller       │──── HTTP POST ────▶  Python ML Service
+  │  /api/predict/*                 │                        (port 5001, Flask)
+  │                                │◀─── JSON response ──   ├── Tabular models (.pkl)
+  │  Receives prediction →          │                        └── Image models (.h5/.pt)
+  │  calls Ollama for guidance →    │
+  │  returns full response to UI    │
+  └────────────────────────────────┘
+
+PYTHON MICROSERVICE STRUCTURE:
+  D://medai/ml_service/
+  ├── app.py                        — Flask app entry point (port 5001)
+  ├── requirements.txt              — Python deps
+  ├── models/                       — Downloaded/trained model files
+  │   ├── tabular/
+  │   │   ├── heart_disease_model.pkl
+  │   │   ├── stroke_model.pkl
+  │   │   ├── diabetes_model.pkl
+  │   │   ├── lung_cancer_tabular_model.pkl
+  │   │   ├── kidney_stone_model.pkl
+  │   │   └── liver_disease_model.pkl
+  │   └── image/
+  │       ├── lung_cancer_image_model/   — jawbra/lungevaty weights
+  │       ├── skin_cancer_model.h5       — efficientnetv2s weights
+  │       ├── blood_cancer_model/        — LeukemiaAttri weights
+  │       ├── renal_clip_model/          — taoyh/RenalCLIP weights
+  │       └── brain_tumor_model/         — Abuzaid01/resnet50 weights
+  ├── routes/
+  │   ├── tabular_routes.py             — /predict/heart, /predict/stroke, etc.
+  │   └── image_routes.py              — /predict/image/lung, /predict/image/brain, etc.
+  ├── predictors/
+  │   ├── tabular/
+  │   │   ├── heart_predictor.py
+  │   │   ├── stroke_predictor.py
+  │   │   ├── diabetes_predictor.py
+  │   │   ├── lung_tabular_predictor.py
+  │   │   ├── kidney_predictor.py
+  │   │   └── liver_predictor.py
+  │   └── image/
+  │       ├── lung_image_predictor.py
+  │       ├── skin_predictor.py
+  │       ├── blood_predictor.py
+  │       ├── kidney_image_predictor.py
+  │       └── brain_predictor.py
+  └── train/                            — One-time training scripts for #4,5,6
+      ├── train_lung_tabular.py         — trains XGBoost on nateraw/lung-cancer
+      ├── train_kidney_tabular.py       — trains RF on Euniceyeee/kidney-ct-abnormality
+      └── train_liver.py                — trains XGBoost on Francesco/liver-disease
+
+PYTHON DEPENDENCIES (requirements.txt):
+  flask
+  flask-cors
+  scikit-learn
+  xgboost
+  lightgbm
+  joblib
+  numpy
+  pandas
+  tensorflow
+  torch
+  torchvision
+  transformers
+  huggingface_hub
+  pillow
+  opencv-python
+
+STARTUP COMMANDS:
+  # Start Python ML microservice
+  cd D://medai/ml_service
+  pip install -r requirements.txt
+  python app.py
+
+  # Start Spring Boot (separate terminal)
+  cd D://medai
+  mvn spring-boot:run
+
+ML SERVICE ENDPOINTS (internal, called only by Spring Boot):
+  POST  /predict/heart              — heart disease tabular prediction
+  POST  /predict/stroke             — stroke tabular prediction
+  POST  /predict/diabetes           — diabetes tabular prediction
+  POST  /predict/lung-tabular       — lung cancer risk factor prediction
+  POST  /predict/kidney-tabular     — kidney stone clinical prediction
+  POST  /predict/liver              — liver disease prediction
+  POST  /predict/image/lung         — lung CT scan image classification
+  POST  /predict/image/skin         — skin dermoscopy image classification
+  POST  /predict/image/blood        — blood smear leukemia classification
+  POST  /predict/image/kidney       — kidney CT scan classification
+  POST  /predict/image/brain        — brain MRI tumor classification
+  GET   /health                     — health check endpoint
+
+SPRING BOOT SIDE — New Classes Added:
+  controller/
+    └── PredictionController.java    — /api/predict/* (Spring Boot facing)
+  service/
+    ├── PredictionService.java       — calls Python ML service via WebClient
+    └── MedicalGuidanceService.java  — calls Ollama after prediction
+  dto/
+    ├── PredictionRequest.java       — structured form input
+    ├── ImagePredictionRequest.java  — image upload input
+    └── PredictionResponse.java      — full response with ML + Ollama guidance
+  config/
+    └── MlServiceConfig.java         — ML service URL config (localhost:5001)
+
+SPRING BOOT API ENDPOINTS (exposed to frontend):
+  POST  /api/predict/heart           — form data → heart risk %
+  POST  /api/predict/stroke          — form data → stroke risk %
+  POST  /api/predict/diabetes        — form data → diabetes risk %
+  POST  /api/predict/lung-tabular    — form data → lung cancer risk %
+  POST  /api/predict/kidney-tabular  — form data → kidney stone risk %
+  POST  /api/predict/liver           — form data → liver disease risk %
+  POST  /api/predict/image/lung      — CT image → Normal/Benign/Malignant
+  POST  /api/predict/image/skin      — dermoscopy → cancer type + confidence
+  POST  /api/predict/image/blood     — blood smear → leukemia type
+  POST  /api/predict/image/kidney    — CT image → Cyst/Normal/Stone/Tumor
+  POST  /api/predict/image/brain     — MRI → Glioma/Meningioma/Pituitary/None
+
+
+================================================================================
+  SECTION 15 — OLLAMA POST-PREDICTION MEDICAL GUIDANCE LAYER
+================================================================================
+
+After EVERY ML model prediction (both tabular and image-based), the result is
+passed to a local Ollama model to generate personalised medical guidance.
+
+This is the CRITICAL bridge between raw ML output and user-friendly advice.
+
+────────────────────────────────────────────────────────────────────────────────
+  15.1  HOW THE GUIDANCE LAYER WORKS
+────────────────────────────────────────────────────────────────────────────────
+
+FULL DATA FLOW:
+  1. User fills form / uploads image on frontend
+  2. Spring Boot sends to Python ML Service → gets raw prediction JSON
+  3. Spring Boot's MedicalGuidanceService receives:
+       { disease, risk_probability, risk_level, predicted_class }
+  4. MedicalGuidanceService builds a structured prompt for Ollama
+  5. Ollama (qwen3.5:latest) generates medical guidance
+  6. Spring Boot combines ML output + Ollama guidance into a final response
+  7. Frontend renders the rich result card
+
+────────────────────────────────────────────────────────────────────────────────
+  15.2  GUIDANCE PROMPT TEMPLATES (in PromptTemplates.java)
+────────────────────────────────────────────────────────────────────────────────
+
+TABULAR PREDICTION GUIDANCE PROMPT:
+  =========================================================================
+  You are Dr. MedAI, a compassionate medical advisor.
+
+  A patient has just completed a medical risk assessment with the following
+  result:
+
+    Disease Assessed: {disease_name}
+    Risk Probability: {risk_percentage}%
+    Risk Level: {risk_level}  (LOW / MEDIUM / HIGH / CRITICAL)
+
+  Patient Profile (if personalisation is ON):
+    {patient_history_context}
+
+  Please provide clear, compassionate medical guidance including:
+  1. What this result means in simple terms (2-3 sentences)
+  2. Immediate lifestyle actions the patient can take (3-5 bullet points)
+  3. Warning signs to watch out for
+  4. When they should see a doctor (urgency scale: routine / soon / urgent / emergency)
+  5. Specialist type to consult if needed (e.g., cardiologist, endocrinologist)
+
+  CRITICAL RULES:
+  - Never say this replaces a doctor's diagnosis
+  - Be empathetic and avoid causing panic
+  - Use simple, non-technical language
+  - Keep the response concise (under 300 words)
+  - If risk level is CRITICAL, strongly urge immediate medical attention
+  =========================================================================
+
+IMAGE PREDICTION GUIDANCE PROMPT:
+  =========================================================================
+  You are Dr. MedAI, a compassionate medical advisor.
+
+  A patient uploaded a medical image for analysis. The AI model returned:
+
+    Cancer/Condition Type: {cancer_type}
+    Predicted Class: {predicted_class}
+    Confidence: {confidence_pct}%
+    Image Type: {image_type}  (MRI / CT Scan / Dermoscopy / Blood Smear)
+
+  Patient Profile (if personalisation is ON):
+    {patient_history_context}
+
+  Please provide:
+  1. What the prediction means in simple terms (2-3 sentences)
+  2. Whether this needs immediate attention (urgency level)
+  3. What specialist to see and why
+  4. What additional tests are usually recommended for this finding
+  5. General coping / next step advice
+
+  CRITICAL RULES:
+  - Always emphasize that a radiologist/specialist must review the actual image
+  - Never confirm or deny a diagnosis — this is a screening aid only
+  - If result suggests Malignant / Tumor / Glioma etc., urge urgent specialist visit
+  - Be gentle, clear, and supportive
+  =========================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+  15.3  RISK LEVEL → GUIDANCE BEHAVIOR MAPPING
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────┬────────────────────────────────────────────────────────────┐
+  │ Risk Level   │ Behavior                                                   │
+  ├──────────────┼────────────────────────────────────────────────────────────┤
+  │ LOW (0–30%)  │ Ollama gives preventive lifestyle advice. No alarm.        │
+  │              │ Hospital finder NOT triggered.                             │
+  ├──────────────┼────────────────────────────────────────────────────────────┤
+  │ MEDIUM(31-60)│ Ollama gives monitoring advice + routine check-up guidance │
+  │              │ Hospital finder NOT triggered, but specialist listed.      │
+  ├──────────────┼────────────────────────────────────────────────────────────┤
+  │ HIGH (61-80%)│ Ollama gives urgent action guidance + warning signs.       │
+  │              │ Hospital finder TRIGGERED — shows nearby relevant hospitals│
+  │              │ with filter for relevant department.                       │
+  ├──────────────┼────────────────────────────────────────────────────────────┤
+  │ CRITICAL(81% │ Ollama issues emergency guidance + immediate specialist    │
+  │        +)    │ Hospital finder TRIGGERED immediately with emergency flag. │
+  │              │ Red alert banner shown on UI.                              │
+  └──────────────┴────────────────────────────────────────────────────────────┘
+
+  For IMAGE models — class-to-severity mapping:
+  ┌─────────────────────────────────┬─────────────────────────────────────────┐
+  │ Predicted Class                 │ Severity / Guidance Trigger             │
+  ├─────────────────────────────────┼─────────────────────────────────────────┤
+  │ Normal / No Tumor / Benign      │ LOW → preventive advice only            │
+  │ Cyst / Stone                    │ MEDIUM → specialist visit recommended   │
+  │ Malignant / Tumor / Glioma /    │ CRITICAL → emergency guidance +         │
+  │ Pre-B / Pro-B / Meningioma /    │ hospital finder triggered immediately   │
+  │ Pituitary (if high conf.)       │                                         │
+  └─────────────────────────────────┴─────────────────────────────────────────┘
+
+────────────────────────────────────────────────────────────────────────────────
+  15.4  COMBINED RESPONSE STRUCTURE (returned to frontend)
+────────────────────────────────────────────────────────────────────────────────
+
+  {
+    // ML Prediction part
+    "prediction": {
+      "disease": "Heart Disease",
+      "risk_probability": 0.73,
+      "risk_percentage": "73%",
+      "risk_level": "HIGH",
+      "predicted_class": null,          // null for tabular, populated for image
+      "confidence": null,               // null for tabular, populated for image
+      "model_used": "Juan12Dev/heart-risk-ai-v4"
+    },
+
+    // Ollama Guidance part (streamed via SSE)
+    "guidance": {
+      "summary": "Your heart disease risk is elevated at 73%...",
+      "immediate_actions": ["Reduce salt intake", "Start 30min walks", ...],
+      "warning_signs": ["Chest pain", "Shortness of breath", ...],
+      "urgency": "SOON",
+      "specialist": "Cardiologist",
+      "disclaimer": "This is a screening tool, not a medical diagnosis."
+    },
+
+    // Hospital trigger flag
+    "trigger_hospital_finder": true,
+    "hospital_specialty_filter": "Cardiology",
+
+    // Personalisation metadata
+    "personalised": true,
+    "interaction_logged": true
+  }
+
+────────────────────────────────────────────────────────────────────────────────
+  15.5  OLLAMA MODEL USED FOR GUIDANCE
+────────────────────────────────────────────────────────────────────────────────
+
+  Model: qwen3.5:latest (already installed — 6.6 GB)
+  Why: Strong medical + general knowledge. Fast enough for post-prediction
+       guidance (not a real-time conversational turn, so slightly more latency
+       is acceptable). Uses the same Ollama port (11434).
+
+  Fallback: llama3.1:8b (already installed — 4.9 GB)
+  When: If qwen3.5 is busy or returns an error.
+
+
+================================================================================
+  SECTION 16 — UPDATED PROJECT STRUCTURE (with ML additions)
+================================================================================
+
+D://medai/
+├── pom.xml                               — Spring Boot Maven config
+├── ml_service/                           — Python ML Microservice (NEW)
+│   ├── app.py                            — Flask server, port 5001
+│   ├── requirements.txt                  — pip dependencies
+│   ├── models/
+│   │   ├── tabular/                      — .pkl model files (downloaded/trained)
+│   │   │   ├── heart_disease_model.pkl
+│   │   │   ├── stroke_model.pkl
+│   │   │   ├── diabetes_model.pkl
+│   │   │   ├── lung_cancer_tabular_model.pkl
+│   │   │   ├── kidney_stone_model.pkl
+│   │   │   └── liver_disease_model.pkl
+│   │   └── image/                        — CNN/.pt model weights
+│   │       ├── lung_cancer_image/
+│   │       ├── skin_cancer.h5
+│   │       ├── blood_cancer/
+│   │       ├── kidney_renal_clip/
+│   │       └── brain_tumor/
+│   ├── routes/
+│   │   ├── tabular_routes.py
+│   │   └── image_routes.py
+│   ├── predictors/
+│   │   ├── tabular/                      — 6 predictor modules
+│   │   └── image/                        — 5 predictor modules
+│   └── train/                            — One-time training scripts
+│       ├── train_lung_tabular.py
+│       ├── train_kidney_tabular.py
+│       └── train_liver.py
+│
+├── src/main/java/com/medai/
+│   ├── controller/
+│   │   ├── PredictionController.java     — NEW: /api/predict/*
+│   │   └── ... (existing controllers)
+│   ├── service/
+│   │   ├── PredictionService.java        — NEW: calls Python ML service
+│   │   ├── MedicalGuidanceService.java   — NEW: Ollama post-prediction guidance
+│   │   └── ... (existing services)
+│   ├── dto/
+│   │   ├── PredictionRequest.java        — NEW
+│   │   ├── ImagePredictionRequest.java   — NEW
+│   │   └── PredictionResponse.java       — NEW: ML result + guidance combined
+│   └── config/
+│       ├── MlServiceConfig.java          — NEW: Python service URL config
+│       └── ... (existing configs)
+│
+└── src/main/resources/static/
+    ├── predict.html                       — NEW: disease prediction dashboard
+    ├── predict-image.html                 — NEW: image upload + cancer diagnosis
+    └── js/
+        ├── predict.js                     — NEW: form submission + result display
+        └── predict-image.js              — NEW: image upload + result display
+
+
+================================================================================
+  SECTION 17 — UPDATED API ENDPOINTS (with ML predictions)
+================================================================================
+
+  (All existing endpoints from Section 7 remain as-is. New endpoints added:)
+
+TABULAR DISEASE PREDICTION (Spring Boot → Python ML → Ollama → Response):
+  POST  /api/predict/heart               — form input → risk % + guidance
+  POST  /api/predict/stroke              — form input → risk % + guidance
+  POST  /api/predict/diabetes            — form input → risk % + guidance
+  POST  /api/predict/lung-tabular        — risk factors → risk % + guidance
+  POST  /api/predict/kidney-tabular      — urine metrics → risk % + guidance
+  POST  /api/predict/liver               — clinical params → risk % + guidance
+
+IMAGE-BASED CANCER PREDICTION (Spring Boot → Python ML → Ollama → Response):
+  POST  /api/predict/image/lung          — CT scan upload → class + guidance
+  POST  /api/predict/image/skin          — dermoscopy upload → class + guidance
+  POST  /api/predict/image/blood         — blood smear upload → class + guidance
+  POST  /api/predict/image/kidney        — CT scan upload → class + guidance
+  POST  /api/predict/image/brain         — MRI upload → class + guidance
+
+GUIDANCE (standalone, if user wants guidance on existing prediction):
+  POST  /api/guidance/generate           — takes prediction JSON → Ollama guidance
+
+PREDICTION HISTORY:
+  GET   /api/predict/history             — user's past predictions + results
+
+
+================================================================================
+  SECTION 18 — UPDATED IMPLEMENTATION PHASES (with ML + Guidance)
+================================================================================
+
+(Phases 1–8 from Section 9 remain. The following are inserted before Phase 8:)
+
+PHASE 5.5 — PYTHON ML MICROSERVICE (Day 10-12)
+  [ ] Create ml_service/ directory structure
+  [ ] Write requirements.txt for Python deps
+  [ ] Download pretrained models:
+        - Juan12Dev/heart-risk-ai-v4 via huggingface_hub
+        - emlacodeuse/ml-stroke-prediction via huggingface_hub
+        - shabari-vignesh8/Diabetes-prediction via huggingface_hub
+        - jawbra/lungevaty (image) via huggingface_hub
+        - Miguel764/efficientnetv2s-skin-cancer-classifier via huggingface_hub
+        - taoyh/RenalCLIP via huggingface_hub
+        - Abuzaid01/brain-tumor-resnet50-classifier via huggingface_hub
+        - LeukemiaAttri (MICCAI 2024) from GitHub
+  [ ] Run 3 training scripts (lung tabular, kidney tabular, liver):
+        cd ml_service && python train/train_lung_tabular.py
+        cd ml_service && python train/train_kidney_tabular.py
+        cd ml_service && python train/train_liver.py
+  [ ] Implement 6 tabular predictor modules (heart, stroke, diabetes,
+        lung-tabular, kidney-tabular, liver)
+  [ ] Implement 5 image predictor modules (lung-CT, skin, blood, kidney-CT, brain)
+  [ ] Implement Flask routes for all 11 /predict/* endpoints
+  [ ] Implement CORS, file upload handling, health check endpoint
+  [ ] Test all predictions with sample inputs/images locally
+
+PHASE 5.6 — SPRING BOOT ML INTEGRATION + GUIDANCE LAYER (Day 12-13)
+  [ ] Implement MlServiceConfig.java (base URL: http://localhost:5001)
+  [ ] Implement PredictionService.java (WebClient calls to Python service)
+  [ ] Implement MedicalGuidanceService.java:
+        - receives raw prediction JSON
+        - builds structured Ollama prompt using PromptTemplates.java
+        - calls Ollama (qwen3.5:latest) for guidance
+        - falls back to llama3.1:8b if needed
+        - returns combined PredictionResponse
+  [ ] Implement PredictionController.java (/api/predict/*)
+  [ ] Implement risk level mapping logic (LOW/MEDIUM/HIGH/CRITICAL)
+  [ ] Implement hospital finder trigger based on risk level
+  [ ] Create predict.html — disease prediction dashboard (all 6 forms)
+  [ ] Create predict-image.html — image upload UI (all 5 cancer types)
+  [ ] Implement predict.js — form validation, API calls, result rendering
+  [ ] Implement predict-image.js — drag-and-drop upload, preview, result card
+  [ ] Add prediction pages to main navigation
+
+PHASE 5.7 — ADDING ML PREDICTION DB RECORDS (Day 13)
+  [ ] Create Flyway migration V6__create_predictions.sql
+  [ ] Add TABLE: predictions (stores all prediction history per user)
+      - user_id, prediction_type (TABULAR/IMAGE), disease, risk_pct,
+        predicted_class, confidence, guidance_text, timestamp
+  [ ] Implement prediction history endpoint: GET /api/predict/history
+  [ ] Show prediction history on dashboard
+
+TABLE: predictions
+  id                BIGSERIAL PRIMARY KEY
+  user_id           BIGINT REFERENCES users(id)
+  prediction_type   VARCHAR(10) NOT NULL          -- TABULAR or IMAGE
+  disease           VARCHAR(100) NOT NULL
+  risk_probability  DECIMAL(5,2)                  -- for tabular
+  risk_level        VARCHAR(10)                   -- LOW/MEDIUM/HIGH/CRITICAL
+  predicted_class   VARCHAR(100)                  -- for image
+  confidence_pct    DECIMAL(5,2)                  -- for image
+  guidance_text     TEXT                          -- Ollama generated guidance
+  model_used        VARCHAR(200)
+  created_at        TIMESTAMP DEFAULT NOW()
+
+
+================================================================================
+  SECTION 19 — COMPLETE MODEL INVENTORY SUMMARY
+================================================================================
+
+┌────┬──────────────────────────┬───────────────────────────────────┬──────────────────────────────┐
+│ #  │ Feature                  │ Model/Source                      │ Type                         │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ OLLAMA LLM MODELS (conversational AI + guidance)                                                 │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ L1 │ Mental Health Chatbot    │ medllama2 (pull needed)           │ Ollama LLM                   │
+│ L2 │ Common Disease Diagnoser │ medllama2 (pull needed)           │ Ollama LLM                   │
+│ L3 │ Complex Disease Diagnoser│ meditron (pull needed)            │ Ollama LLM                   │
+│ L4 │ Medicine Info Chatbot    │ qwen3.5:latest (installed ✅)     │ Ollama LLM                   │
+│ L5 │ Post-Prediction Guidance │ qwen3.5:latest (installed ✅)     │ Ollama LLM                   │
+│ L6 │ Fallback                 │ llama3.1:8b (installed ✅)        │ Ollama LLM                   │
+│ L7 │ Personalisation Embed.   │ nomic-embed-text (installed ✅)   │ Ollama Embedding             │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ TABULAR ML MODELS (form-based disease risk prediction, via Python service)                       │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ T1 │ Heart Disease            │ Juan12Dev/heart-risk-ai-v4        │ Stacked Ensemble .pkl        │
+│ T2 │ Stroke                   │ emlacodeuse/ml-stroke-prediction  │ Random Forest .pkl           │
+│ T3 │ Diabetes                 │ shabari-vignesh8/Diabetes-predict │ Ensemble .pkl                │
+│ T4 │ Lung Cancer (risk)       │ Trained on nateraw/lung-cancer    │ XGBoost .pkl (train script)  │
+│ T5 │ Kidney Stone (clinical)  │ Trained on Euniceyeee dataset     │ Random Forest .pkl (script)  │
+│ T6 │ Liver Disease            │ Trained on Francesco/liver-disease│ XGBoost .pkl (train script)  │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ IMAGE ML MODELS (scan/image-based cancer detection, via Python service)                         │
+├────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┤
+│ I1 │ Lung Cancer (CT)         │ jawbra/lungevaty                  │ Transformer .pt              │
+│ I2 │ Skin Cancer              │ Miguel764/efficientnetv2s-skin    │ EfficientNetV2S .h5          │
+│ I3 │ Blood/Leukemia           │ LeukemiaAttri (MICCAI 2024)       │ CNN/YOLOv8 .pt               │
+│ I4 │ Kidney (CT)              │ taoyh/RenalCLIP                   │ 3D VLM .pt                   │
+│ I5 │ Brain Tumor (MRI)        │ Abuzaid01/brain-tumor-resnet50    │ ResNet50 .pt                 │
+└────┴──────────────────────────┴───────────────────────────────────┴──────────────────────────────┘
+
+TOTAL: 7 Ollama models (2 to pull) + 6 tabular ML models + 5 image ML models
+       = 18 models total
+
+OLLAMA PULL COMMANDS NEEDED:
+  $ ollama pull medllama2
+  $ ollama pull meditron
+
+PYTHON ML QUICKSTART:
+  $ cd D://medai/ml_service
+  $ pip install -r requirements.txt
+  $ python train/train_lung_tabular.py    # train lung tabular model (~3 min)
+  $ python train/train_kidney_tabular.py  # train kidney model (~2 min)
+  $ python train/train_liver.py           # train liver model (~2 min)
+  $ python app.py                         # start ML service on :5001
+
+
+================================================================================
+  END OF IMPLEMENTATION PLAN
+================================================================================

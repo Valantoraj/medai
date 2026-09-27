@@ -1,0 +1,59 @@
+# ── Maven ──────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ── Spring Boot ────────────────────────────────────────────
+spring-boot-*.jar
+
+# ── IDE ────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+.settings/
+.classpath
+.project
+.factorypath
+
+# ── Python ML service ──────────────────────────────────────
+ml_service/__pycache__/
+ml_service/**/__pycache__/
+ml_service/*.pyc
+ml_service/**/*.pyc
+ml_service/venv/
+ml_service/.venv/
+ml_service/env/
+
+# ── ML model files (large binaries — download separately) ──
+ml_service/models/tabular/*.pkl
+ml_service/models/image/
+!ml_service/models/.gitkeep
+!ml_service/models/tabular/.gitkeep
+
+# ── Logs ───────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Environment / secrets ──────────────────────────────────
+.env
+.env.local
+*.env
+
+# ── Node (if any tooling added later) ─────────────────────
+node_modules/
+npm-debug.log
+
+# ── Misc ───────────────────────────────────────────────────
+*.orig
+*.bak
+*.tmp

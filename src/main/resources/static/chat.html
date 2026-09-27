@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MedAI — Chatbots</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <link rel="stylesheet" href="/css/chat.css"/>
+  <link rel="stylesheet" href="/css/responsive.css"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/index.html">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    <span class="gradient-text">MedAI</span>
+  </a>
+  <div class="navbar-links">
+    <a class="nav-link active" href="/chat.html">🤖 Chatbots</a>
+    <a class="nav-link" href="/medicine.html">💊 Medicine</a>
+    <a class="nav-link" href="/predict.html">📊 Predict</a>
+    <a class="nav-link" href="/predict-image.html">🔬 Scan</a>
+    <a class="nav-link" href="/hospitals.html">🏥 Hospitals</a>
+    <a class="nav-link" href="/dashboard.html">📈 Dashboard</a>
+  </div>
+  <div class="navbar-right">
+    <button class="personalisation-toggle" id="personalisation-toggle">
+      <span class="dot"></span><span class="toggle-label">General</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
+    <button class="btn btn-ghost btn-icon" id="theme-toggle">☀️</button>
+  </div>
+</nav>
+
+<div class="chat-layout">
+  <!-- Bot selector sidebar -->
+  <aside class="bot-sidebar" id="bot-sidebar">
+    <div class="bot-sidebar-title">Select Assistant</div>
+
+    <div class="bot-item active" data-bot="mental-health" onclick="selectBot('mental-health')">
+      <div class="bot-icon">🧠</div>
+      <div><div class="bot-name">Mental Health</div><div class="bot-subtitle">medllama2</div></div>
+    </div>
+    <div class="bot-item" data-bot="common-disease" onclick="selectBot('common-disease')">
+      <div class="bot-icon">🩺</div>
+      <div><div class="bot-name">Common Disease</div><div class="bot-subtitle">medllama2</div></div>
+    </div>
+    <div class="bot-item" data-bot="complex-disease" onclick="selectBot('complex-disease')">
+      <div class="bot-icon">🔬</div>
+      <div><div class="bot-name">Complex Disease</div><div class="bot-subtitle">meditron</div></div>
+    </div>
+
+    <div class="bot-sidebar-title" style="margin-top:16px;">Sessions</div>
+    <button class="new-chat-btn" id="new-chat-btn" onclick="newChat()">+ New Chat</button>
+    <div id="session-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+  </aside>
+
+  <!-- Main chat area -->
+  <main class="chat-main">
+    <div class="chat-header">
+      <div class="chat-bot-name" id="chat-bot-name">
+        <span id="chat-bot-icon">🧠</span>
+        <span id="chat-bot-label">Mental Health Counselor</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="session-badge" style="font-size:11px;color:var(--text-muted);font-family:monospace;"></span>
+        <button class="btn btn-ghost btn-sm" onclick="newChat()">New Chat</button>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div id="welcome-msg" style="text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:12px;" id="welcome-icon">🧠</div>
+        <h3 style="font-size:16px;margin-bottom:8px;" id="welcome-title">Mental Health Counselor</h3>
+        <p style="font-size:13px;color:var(--text-muted);max-width:320px;margin:0 auto;" id="welcome-desc">
+          I'm here to listen and support you. Tell me how you're feeling, and I'll ask questions one at a time to better understand your situation.
+        </p>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea class="chat-textarea" id="chat-input" placeholder="Type your message…" rows="1"></textarea>
+      <button class="chat-send-btn" id="send-btn" title="Send (Enter)">➤</button>
+    </div>
+  </main>
+
+  <!-- Confidence sidebar -->
+  <aside class="confidence-sidebar" id="confidence-sidebar">
+    <div class="confidence-title">Confidence Scores</div>
+    <p style="font-size:11px;color:var(--text-muted);line-height:1.5;">
+      Dr. MedAI tracks confidence for possible conditions as you answer questions. Scores update with each response.
+    </p>
+    <div id="confidence-list" style="display:flex;flex-direction:column;gap:12px;margin-top:4px;"></div>
+    <div id="threshold-card" style="display:none;"></div>
+
+    <!-- Hospital trigger -->
+    <div id="hospital-trigger" style="display:none;" class="hospital-trigger">
+      🏥 <span>Critical condition detected. <a href="/hospitals.html" style="color:var(--warning);font-weight:700;">Find nearby hospitals →</a></span>
+    </div>
+  </aside>
+</div>
+
+<div id="toast-container"></div>
+<script src="/js/app.js"></script>
+<script src="/js/confidence.js"></script>
+<script src="/js/chat.js"></script>
+</body>
+</html>
