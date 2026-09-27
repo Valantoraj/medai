@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.Message;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -66,7 +67,7 @@ class ConfidenceEngineTest {
         when(confidenceScoreRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         var result = confidenceEngine.updateConfidence(
-                session, List.of(new UserMessage("I have a fever")), "COMMON_DISEASE");
+                session, List.of(UserMessage.builder().text("I have a fever").build()), "COMMON_DISEASE");
 
         assertThat(result).isNotNull();
         assertThat(result.getScores()).hasSize(2);
@@ -89,7 +90,7 @@ class ConfidenceEngineTest {
         when(confidenceScoreRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         var result = confidenceEngine.updateConfidence(
-                session, List.of(new UserMessage("Chest pain")), "COMMON_DISEASE");
+                session, List.of(UserMessage.builder().text("Chest pain").build()), "COMMON_DISEASE");
 
         assertThat(result.isThresholdReached()).isTrue();
         assertThat(result.getTopCondition()).isEqualTo("pneumonia");
@@ -112,7 +113,7 @@ class ConfidenceEngineTest {
         when(confidenceScoreRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         var result = confidenceEngine.updateConfidence(
-                complexSession, List.of(new UserMessage("Chest tightness")), "COMPLEX_DISEASE");
+                complexSession, List.of(UserMessage.builder().text("Chest tightness").build()), "COMPLEX_DISEASE");
 
         // 83 < 85 (complex threshold), should NOT be reached
         assertThat(result.isThresholdReached()).isFalse();
@@ -126,7 +127,7 @@ class ConfidenceEngineTest {
         when(ollamaService.query(anyString(), anyString())).thenReturn("not valid json at all");
 
         var result = confidenceEngine.updateConfidence(
-                session, List.of(new UserMessage("test")), "COMMON_DISEASE");
+                session, List.of(UserMessage.builder().text("test").build()), "COMMON_DISEASE");
 
         assertThat(result).isNotNull();
         assertThat(result.getScores()).isEmpty();
@@ -149,7 +150,7 @@ class ConfidenceEngineTest {
                 .thenReturn(Optional.of(existing));
         when(confidenceScoreRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        confidenceEngine.updateConfidence(session, List.of(new UserMessage("worse")), "COMMON_DISEASE");
+        confidenceEngine.updateConfidence(session, List.of(UserMessage.builder().text("worse").build()), "COMMON_DISEASE");
 
         // Verify the existing score was updated (id still 5)
         verify(confidenceScoreRepository).save(argThat(cs ->
@@ -171,7 +172,7 @@ class ConfidenceEngineTest {
         when(confidenceScoreRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         var result = confidenceEngine.updateConfidence(
-                session, List.of(new UserMessage("bad headache")), "COMMON_DISEASE");
+                session, List.of(UserMessage.builder().text("bad headache").build()), "COMMON_DISEASE");
 
         assertThat(result.getScores()).hasSize(1);
         assertThat(result.getTopCondition()).isEqualTo("migraine");

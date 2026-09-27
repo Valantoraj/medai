@@ -61,7 +61,8 @@ class ChatServiceTest {
         when(ollamaService.chat(anyString(), anyString(), anyList(), anyString()))
                 .thenReturn("I'll ask you some questions.");
         when(ollamaService.toMessage(anyString(), anyString()))
-                .thenAnswer(i -> new org.springframework.ai.chat.messages.UserMessage(i.getArgument(1)));
+                .thenAnswer(i -> org.springframework.ai.chat.messages.UserMessage.builder()
+                        .text((String) i.getArgument(1)).build());
         when(messageRepository.countBySessionId(anyLong())).thenReturn(1L);
         when(confidenceEngine.updateConfidence(any(), anyList(), anyString()))
                 .thenReturn(ConfidenceUpdate.builder().scores(List.of()).thresholdReached(false).build());
@@ -86,7 +87,8 @@ class ChatServiceTest {
         when(ollamaService.chat(anyString(), anyString(), anyList(), anyString()))
                 .thenReturn("How long have you had the headache?");
         when(ollamaService.toMessage(anyString(), anyString()))
-                .thenAnswer(i -> new org.springframework.ai.chat.messages.UserMessage(i.getArgument(1)));
+                .thenAnswer(i -> org.springframework.ai.chat.messages.UserMessage.builder()
+                        .text((String) i.getArgument(1)).build());
         when(messageRepository.countBySessionId(anyLong())).thenReturn(2L);
         when(confidenceEngine.updateConfidence(any(), anyList(), anyString()))
                 .thenReturn(ConfidenceUpdate.builder().scores(List.of()).thresholdReached(false).build());
@@ -113,7 +115,8 @@ class ChatServiceTest {
         when(ollamaService.chat(anyString(), contains("hypertension"), anyList(), anyString()))
                 .thenReturn("Noted. Does your headache come with blurred vision?");
         when(ollamaService.toMessage(anyString(), anyString()))
-                .thenAnswer(i -> new org.springframework.ai.chat.messages.UserMessage(i.getArgument(1)));
+                .thenAnswer(i -> org.springframework.ai.chat.messages.UserMessage.builder()
+                        .text((String) i.getArgument(1)).build());
         when(messageRepository.countBySessionId(anyLong())).thenReturn(2L);
         when(confidenceEngine.updateConfidence(any(), anyList(), anyString()))
                 .thenReturn(ConfidenceUpdate.builder().scores(List.of()).thresholdReached(false).build());
@@ -144,7 +147,8 @@ class ChatServiceTest {
         when(ollamaService.chat(anyString(), anyString(), anyList(), anyString()))
                 .thenReturn("Based on your symptoms, I'm concerned about your heart. Please seek urgent care.");
         when(ollamaService.toMessage(anyString(), anyString()))
-                .thenAnswer(i -> new org.springframework.ai.chat.messages.UserMessage(i.getArgument(1)));
+                .thenAnswer(i -> org.springframework.ai.chat.messages.UserMessage.builder()
+                        .text((String) i.getArgument(1)).build());
         when(messageRepository.countBySessionId(anyLong())).thenReturn(6L);
         when(confidenceEngine.updateConfidence(any(), anyList(), anyString())).thenReturn(highUrgency);
         doNothing().when(personalisationService).logInteraction(anyLong(), anyString(), anyString(), anyString());
@@ -169,7 +173,8 @@ class ChatServiceTest {
         when(ollamaService.chat(anyString(), anyString(), anyList(), anyString()))
                 .thenReturn("Ibuprofen is a nonsteroidal anti-inflammatory drug...");
         when(ollamaService.toMessage(anyString(), anyString()))
-                .thenAnswer(i -> new org.springframework.ai.chat.messages.UserMessage(i.getArgument(1)));
+                .thenAnswer(i -> org.springframework.ai.chat.messages.UserMessage.builder()
+                        .text((String) i.getArgument(1)).build());
         when(messageRepository.countBySessionId(anyLong())).thenReturn(1L);
         doNothing().when(personalisationService).logInteraction(anyLong(), anyString(), anyString(), anyString());
 

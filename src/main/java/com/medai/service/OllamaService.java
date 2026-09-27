@@ -110,7 +110,7 @@ public class OllamaService {
         if (history != null) {
             messages.addAll(history);
         }
-        messages.add(new UserMessage(userMessage));
+        messages.add(UserMessage.builder().text(userMessage).build());
         return messages;
     }
 
@@ -119,10 +119,10 @@ public class OllamaService {
      */
     public Message toMessage(String role, String content) {
         return switch (role.toUpperCase()) {
-            case "USER" -> new UserMessage(content);
+            case "USER" -> UserMessage.builder().text(content).build();
             case "ASSISTANT" -> new AssistantMessage(content);
             case "SYSTEM" -> new SystemMessage(content);
-            default -> new UserMessage(content);
+            default -> UserMessage.builder().text(content).build();
         };
     }
 }
