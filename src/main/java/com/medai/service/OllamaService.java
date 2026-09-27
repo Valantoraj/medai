@@ -17,7 +17,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -108,16 +107,11 @@ public class OllamaService {
     // ── Private helpers ────────────────────────────────────────
 
     private OllamaOptions buildOptions(String modelName) {
-        OllamaOptions options = OllamaOptions.builder()
+        return OllamaOptions.builder()
                 .model(modelName)
                 .temperature(0.7)
                 .numPredict(1024)
                 .build();
-        // Pass think:false as an additional property to disable reasoning blocks
-        // on thinking-capable models (qwen3-coder, qwen3.5, etc.)
-        // This is the correct way in Spring AI 1.0.0 since setThink() doesn't exist yet
-        options.setAdditionalProperties(Map.of("think", false));
-        return options;
     }
 
     private List<Message> buildMessages(String systemPrompt, List<Message> history, String userMessage) {
