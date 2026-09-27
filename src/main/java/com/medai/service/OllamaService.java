@@ -17,6 +17,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,26 +31,17 @@ public class OllamaService {
     /**
      * Send a chat request to Ollama with a specific model, system prompt, and message history.
      * Returns the full response string.
-     * Handles thinking models (qwen3-coder, qwen3.5) by disabling think mode.
+     * think:false is passed via additionalProperties to disable reasoning for thinking models.
      */
     public String chat(String modelName, String systemPrompt, List<Message> history, String userMessage) {
         try {
             List<Message> messages = buildMessages(systemPrompt, history, userMessage);
-            OllamaOptions options = OllamaOptions.builder()
-                    .model(modelName)
-                    .temperature(0.7)
-                    .numPredict(1024)
-                    .build();
-            // Disable thinking mode for thinking models (qwen3-coder, qwen3.5 etc)
-            // This ensures we get plain text back instead of <think>...</think> blocks
-            options.setThink(false);
-
+            OllamaOptions options = buildOptions(modelName);
             Prompt prompt = new Prompt(messages, options);
             ChatResponse response = chatModel.call(prompt);
             return extractText(response);
         } catch (Exception e) {
             log.error("Error calling Ollama model {}: {}", modelName, e.getMessage());
-            // Try fallback model
             if (!modelName.equals(ollamaConfig.getFallbackModel())) {
                 log.info("Falling back to model: {}", ollamaConfig.getFallbackModel());
                 return chat(ollamaConfig.getFallbackModel(), systemPrompt, history, userMessage);
@@ -64,22 +56,12 @@ public class OllamaService {
     public Flux<String> streamChat(String modelName, String systemPrompt, List<Message> history, String userMessage) {
         try {
             List<Message> messages = buildMessages(systemPrompt, history, userMessage);
-            OllamaOptions options = OllamaOptions.builder()
-                    .model(modelName)
-                    .temperature(0.7)
-                    .numPredict(1024)
-                    .build();
-            options.setThink(false);
-
+            OllamaOptions options = buildOptions(modelName);
             Prompt prompt = new Prompt(messages, options);
             return chatModel.stream(prompt)
                     .map(response -> {
-                        String text = response.getResult().getOutput().getText();
-                        if (text == null) {
-                            Object raw = response.getResult().getOutput().getContent();
-                            text = raw != null ? raw.toString() : "";
-                        }
-                        return text;
+                        String text = extractText(response);
+                        return text != null ? text : "";
                     })
                     .onErrorResume(e -> {
                         log.error("Streaming error for model {}: {}", modelName, e.getMessage());
@@ -97,12 +79,10 @@ public class OllamaService {
     public float[] generateEmbedding(String text) {
         try {
             var response = embeddingModel.embedForResponse(List.of(text));
-            // Spring AI 1.0.0: getOutput() returns float[]
-            float[] output = response.getResults().get(0).getOutput();
-            return output;
+            return response.getResults().get(0).getOutput();
         } catch (Exception e) {
             log.error("Error generating embedding: {}", e.getMessage());
-            return new float[768]; // zero vector fallback
+            return new float[768];
         }
     }
 
@@ -111,6 +91,33 @@ public class OllamaService {
      */
     public String query(String modelName, String prompt) {
         return chat(modelName, "", List.of(), prompt);
+    }
+
+    /**
+     * Convert stored chat message role strings to Spring AI Message objects.
+     */
+    public Message toMessage(String role, String content) {
+        return switch (role.toUpperCase()) {
+            case "USER" -> UserMessage.builder().text(content).build();
+            case "ASSISTANT" -> new AssistantMessage(content);
+            case "SYSTEM" -> new SystemMessage(content);
+            default -> UserMessage.builder().text(content).build();
+        };
+    }
+
+    // ── Private helpers ────────────────────────────────────────
+
+    private OllamaOptions buildOptions(String modelName) {
+        OllamaOptions options = OllamaOptions.builder()
+                .model(modelName)
+                .temperature(0.7)
+                .numPredict(1024)
+                .build();
+        // Pass think:false as an additional property to disable reasoning blocks
+        // on thinking-capable models (qwen3-coder, qwen3.5, etc.)
+        // This is the correct way in Spring AI 1.0.0 since setThink() doesn't exist yet
+        options.setAdditionalProperties(Map.of("think", false));
+        return options;
     }
 
     private List<Message> buildMessages(String systemPrompt, List<Message> history, String userMessage) {
@@ -126,36 +133,17 @@ public class OllamaService {
     }
 
     /**
-     * Extract text from ChatResponse — handles thinking models where getText() may return null.
+     * Extract text from ChatResponse — handles thinking models where getText() may return null
+     * when the model returns only a thinking block with no final answer text.
      */
     private String extractText(ChatResponse response) {
         if (response == null || response.getResult() == null) return "";
         var output = response.getResult().getOutput();
         if (output == null) return "";
 
-        // Primary: getText()
         String text = output.getText();
         if (text != null && !text.isBlank()) return text;
 
-        // Fallback: getContent() as string (some model adapters use this)
-        Object content = output.getContent();
-        if (content != null) {
-            String contentStr = content.toString();
-            if (!contentStr.isBlank()) return contentStr;
-        }
-
         return "";
-    }
-
-    /**
-     * Convert stored chat message role strings to Spring AI Message objects.
-     */
-    public Message toMessage(String role, String content) {
-        return switch (role.toUpperCase()) {
-            case "USER" -> UserMessage.builder().text(content).build();
-            case "ASSISTANT" -> new AssistantMessage(content);
-            case "SYSTEM" -> new SystemMessage(content);
-            default -> UserMessage.builder().text(content).build();
-        };
     }
 }
