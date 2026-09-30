@@ -56,7 +56,7 @@ spring:
           must-revalidate: true
 
 server:
-  port: 8080
+  port: 8090
   error:
     include-message: always
     include-binding-errors: always

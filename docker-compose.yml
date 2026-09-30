@@ -77,7 +77,7 @@ services:
       - "127.0.0.1:5001:5001"
     environment:
       - PYTHONUNBUFFERED=1
-      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8080}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8090}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:5001/health || exit 1"]
       interval: 15s
@@ -92,7 +92,7 @@ services:
       dockerfile: Dockerfile.spring
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medai
       - SPRING_DATASOURCE_USERNAME=medai
@@ -101,7 +101,7 @@ services:
       - APP_ML_SERVICE_BASE_URL=http://ml-service:5001
       - APP_JWT_SECRET=${JWT_SECRET}
       - APP_JWT_EXPIRATION=86400000
-      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8080}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:8090}
     depends_on:
       postgres:
         condition: service_healthy

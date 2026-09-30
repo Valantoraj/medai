@@ -258,11 +258,11 @@ echo.
 echo   Wait about 30 seconds for Spring Boot to fully start,
 echo   then open your browser and go to:
 echo.
-echo        http://localhost:8080
+echo        http://localhost:8090
 echo.
 echo   Two windows have opened:
 echo     - "MedAI - ML Service"  (Flask on port 5001)
-echo     - "MedAI - Backend"     (Spring Boot on port 8080)
+echo     - "MedAI - Backend"     (Spring Boot on port 8090)
 echo.
 echo   To start MedAI next time, just run: start.bat
 echo ============================================================
