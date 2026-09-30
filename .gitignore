@@ -20,14 +20,14 @@ ml_service/.venv/
 *.pyc
 
 # ── Model weights (not committed — download separately) ─────
-ml_service/*.pt
+# ml_service/*.pt   <-- now committed
 ml_service/weights/
 ml_service/skin_cancer_workdir/
 
 # ── All training runs/artifacts ─────────────────────────────
 ml_service/runs/
 ml_service/*_runs/
-ml_service/run_ml_models/
+# ml_service/run_ml_models/  <-- now committed
 
 # ── All raw datasets and processed datasets ─────────────────
 ml_service/*_dataset/
