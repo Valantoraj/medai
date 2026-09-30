@@ -5,186 +5,170 @@ A full-stack medical AI application combining disease risk prediction, cancer im
 ## Features
 
 - **6 Chatbots** — Mental health, common disease, complex disease, medicine info (powered by Ollama)
-- **6 Tabular risk models** — Heart, stroke, diabetes, lung, kidney, liver (NHANES YOLO ensemble)
+- **6 Tabular risk models** — Heart, stroke, diabetes, lung, kidney, liver (NHANES ensemble)
 - **6 Cancer image models** — Brain, liver, blood, lung, kidney, skin (YOLO detection)
 - **Hospital finder** — Live map using OpenStreetMap + GPS
 - **Dashboard** — Prediction history, chat sessions, activity log
 - **Personalisation** — Vector-search memory across sessions
 
-## Prerequisites
+---
 
-Install these on your machine before starting:
+## Quick Start — Choose your method
 
-| Tool | Version | Download |
-|------|---------|----------|
-| Java JDK | 17 | https://adoptium.net |
-| Maven | 3.6+ | https://maven.apache.org |
-| Python | 3.10+ | https://python.org |
-| PostgreSQL | 14+ | https://postgresql.org |
-| Ollama | latest | https://ollama.com |
+### Method A: One-click batch file (Windows, native)
 
-## Step 1 — Get the model weights
+> Best if you want native performance with your GPU.
 
-The trained model files are not in this repository (too large for GitHub).
-Download them and place them in the correct paths:
+**Prerequisites — install these first:**
 
-**Cancer image models** — place in `ml_service/`
-```
-ml_service/
-├── lung_cancer_model.pt
-├── blood_cancer_model.pt
-├── kidney_cancer_cyst_stone_model.pt
-├── skin_cancer_model.pt
-├── runs/
-│   ├── detect/runs/detect/brain_tumor_yolo/weights/best.pt
-│   └── liver_cancer_detect_v2/liver_cancer_yolo_fold0/weights/best.pt
+| Tool | Download |
+|------|----------|
+| Java 17 JDK | https://adoptium.net |
+| Maven | https://maven.apache.org/download.cgi → extract to `C:\maven`, add `C:\maven\bin` to PATH |
+| Python 3.11+ | https://python.org → check "Add Python to PATH" |
+| PostgreSQL 16 | https://www.enterprisedb.com/downloads/postgres-postgresql-downloads |
+| Git | https://git-scm.com/download/win |
+| Ollama | https://ollama.com/download/windows |
+
+**Then run:**
+
+```cmd
+git clone https://github.com/Valantoraj/medai-new.git
+cd medai-new
 ```
 
-**Tabular models** — place in `ml_service/run_ml_models/`
-```
-ml_service/run_ml_models/
-├── heart_disease_model.joblib
-├── stroke_model.joblib
-├── diabetes_screening_model.joblib
-├── lung_disease_model.joblib
-├── kidney_ckd_selfreport_model.joblib
-└── liver_disease_model.joblib
+Right-click `setup.bat` → **Run as administrator**
+
+That's it. `setup.bat` will:
+- Check all prerequisites
+- Create the database automatically
+- Set up the Python virtual environment
+- Detect your RAM and pull the right Ollama model automatically
+- Build the Spring Boot JAR
+- Start both services and open your browser
+
+**Next time** — just double-click `start.bat`
+
+---
+
+### Method B: Docker (Windows, Linux, macOS)
+
+> Best if you want a clean isolated setup with one command. Requires Docker Desktop.
+
+**Prerequisites:**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- Git
+
+**Then run:**
+
+```cmd
+git clone https://github.com/Valantoraj/medai-new.git
+cd medai-new
 ```
 
-> You can retrain the tabular models with: `python ml_service/train_ml_models.py --task all`
-> You can retrain the image models by running the respective `train_*.py` scripts.
+**Windows** — double-click `docker-setup-windows.bat`
 
-## Step 2 — Set up PostgreSQL
+**Linux / macOS:**
+```bash
+cp .env.example .env
+# Edit .env — fill in DB_PASSWORD and JWT_SECRET
+nano .env
+
+docker compose up -d
+
+# Pull Ollama models (one time)
+docker exec medai-ollama-1 ollama pull llama3.2:3b
+docker exec medai-ollama-1 ollama pull nomic-embed-text
+```
+
+Open http://localhost:8080
+
+**Next time** — run `docker-start.bat` (Windows) or `docker compose up -d` (Linux/macOS)
+
+---
+
+### Method C: Manual setup (Linux/macOS)
 
 ```bash
-# Create the database and user
-psql -U postgres -c "CREATE USER medai WITH PASSWORD 'medai_password';"
-psql -U postgres -c "CREATE DATABASE medai OWNER medai;"
-psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;" -d medai
-```
+git clone https://github.com/Valantoraj/medai-new.git
+cd medai-new
 
-## Step 3 — Pull Ollama models
+# 1. PostgreSQL
+sudo -u postgres psql -c "CREATE USER medai WITH PASSWORD 'medai_password';"
+sudo -u postgres psql -c "CREATE DATABASE medai OWNER medai;"
+sudo -u postgres psql -d medai -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
-```bash
-ollama pull qwen3-coder          # main LLM (~18 GB, use llama3.2:3b for lower RAM)
-ollama pull nomic-embed-text     # embeddings for personalisation
-```
+# 2. Ollama models
+ollama pull llama3.2:3b        # or qwen3-coder if you have 20GB+ RAM
+ollama pull nomic-embed-text
 
-If you have limited RAM (< 16 GB), use a smaller model instead:
-```bash
-ollama pull llama3.2:3b
-```
-Then open `src/main/resources/application.yml` and change every `qwen3-coder` to `llama3.2:3b`.
-
-## Step 4 — Set up the ML service
-
-```bash
+# 3. ML service
 cd ml_service
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+python3 -m venv venv && source venv/bin/activate
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
-```
+deactivate && cd ..
 
-## Step 5 — Start the ML service
+# 4. Start ML service (Terminal 1)
+cd ml_service && source venv/bin/activate && python app.py
 
-```bash
-cd ml_service
-source venv/bin/activate
-python app.py
-```
-
-The Flask service starts on `http://localhost:5001`. Leave this running.
-
-## Step 6 — Start the Spring Boot backend
-
-Open a new terminal:
-
-```bash
-cd /path/to/this/repo
+# 5. Start backend (Terminal 2)
 mvn spring-boot:run
 ```
 
-The app starts on `http://localhost:8080`. Open that URL in your browser.
+Open http://localhost:8080
 
 ---
 
-## Docker (alternative to steps 4–6)
+## Model selection by available RAM
 
-If you have Docker installed, you can run everything except Ollama with:
+| RAM | Recommended model | Change in `application.yml` |
+|-----|------------------|------------------------------|
+| 20 GB+ | `qwen3-coder` (best quality) | default |
+| 8–20 GB | `llama3.2:3b` (good quality) | replace `qwen3-coder` with `llama3.2:3b` |
+| 4–8 GB | `phi4-mini` (fast, compact) | replace `qwen3-coder` with `phi4-mini` |
 
-```bash
-cp .env.example .env
-# Edit .env with your values (DB password, JWT secret, etc.)
-docker compose up -d
-```
-
-Then pull Ollama models separately (Ollama runs on your host, not in Docker):
-```bash
-ollama pull llama3.2:3b
-ollama pull nomic-embed-text
-```
+`setup.bat` and `docker-setup-windows.bat` detect RAM and choose automatically.
 
 ---
 
-## Configuration
-
-All configuration is in `src/main/resources/application.yml`.
-Sensitive values (DB password, JWT secret) can be set via environment variables — see `.env.example`.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SPRING_DATASOURCE_PASSWORD` | `medai_password` | PostgreSQL password |
-| `APP_JWT_SECRET` | (hardcoded dev key) | JWT signing secret — **change for production** |
-| `SPRING_AI_OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `APP_ML_SERVICE_BASE_URL` | `http://localhost:5001` | Flask ML service URL |
-| `OLLAMA_MODEL_CHAT` | `qwen3-coder` | LLM model for all chatbots |
-| `ALLOWED_ORIGIN` | `http://localhost:8080` | CORS allowed origin |
-
----
-
-## Project Structure
+## Project structure
 
 ```
-medai/
-├── src/main/java/com/medai/       # Spring Boot backend
-│   ├── controller/                # REST API endpoints
-│   ├── service/                   # Business logic + Ollama integration
-│   ├── model/                     # JPA entities
-│   ├── repository/                # Spring Data repositories
-│   ├── config/                    # Security, CORS, WebSocket config
-│   └── dto/                       # Request/response DTOs
-├── src/main/resources/
-│   ├── application.yml            # All configuration
-│   ├── db/migration/              # Flyway SQL migrations (auto-run on startup)
-│   └── static/                    # Frontend (HTML + CSS + JS)
-├── ml_service/
-│   ├── app.py                     # Flask entry point
-│   ├── routes/                    # Image and tabular prediction routes
-│   ├── predictors/
-│   │   ├── image/                 # YOLO cancer predictors
-│   │   └── tabular/               # NHANES ensemble predictors
-│   └── requirements.txt
-├── Dockerfile.spring              # Docker image for Spring Boot
-├── ml_service/Dockerfile.ml       # Docker image for ML service
-├── docker-compose.yml             # Runs all services together
-└── .env.example                   # Environment variable template
+medai-new/
+├── setup.bat                      ← Windows one-click native setup
+├── start.bat                      ← Windows daily launcher (native)
+├── docker-setup-windows.bat       ← Windows one-click Docker setup
+├── docker-start.bat               ← Windows Docker daily launcher
+├── docker-compose.yml             ← Docker Compose (all platforms)
+├── Dockerfile.spring              ← Spring Boot container
+├── Caddyfile                      ← HTTPS reverse proxy config
+├── .env.example                   ← Environment variable template
+├── src/
+│   ├── main/java/com/medai/       ← Spring Boot backend
+│   └── main/resources/
+│       ├── application.yml        ← All configuration
+│       ├── db/migration/          ← Flyway SQL migrations
+│       └── static/                ← Frontend (HTML/CSS/JS)
+└── ml_service/
+    ├── app.py                     ← Flask entry point
+    ├── routes/                    ← API routes
+    ├── predictors/                ← YOLO + tabular model inference
+    ├── *.pt                       ← YOLO model weights (included)
+    ├── run_ml_models/*.joblib     ← Tabular model weights (included)
+    ├── Dockerfile.ml
+    └── requirements.txt
 ```
 
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Spring Boot 3, Spring Security (JWT), Spring AI, WebFlux |
-| Database | PostgreSQL 16, Flyway migrations, pgvector |
-| ML Service | Flask, Ultralytics YOLO, scikit-learn, LightGBM, XGBoost, CatBoost |
-| LLM | Ollama (local, no cloud) |
+| Backend | Spring Boot 3, Spring Security JWT, Spring AI, WebFlux |
+| Database | PostgreSQL 16 + pgvector, Flyway |
+| ML service | Flask, Ultralytics YOLO, scikit-learn, LightGBM, XGBoost, CatBoost |
+| LLM | Ollama — fully local, no cloud |
 | Frontend | Vanilla HTML/CSS/JS, Leaflet maps, Lucide icons |
-| Deployment | Docker Compose, Caddy (HTTPS) |
+| Deployment | Docker Compose, Caddy HTTPS |
 
-## Notes
-
-- All AI runs locally via Ollama — no data leaves your machine
-- The `⚠️ WARNING` regex in `medicine.js` is intentional — it formats LLM warning text
-- Model weights are not included — download or train them separately
-- For production deployment, see `docs/deploy-guide.txt`
+> All AI runs locally — no data ever leaves your machine.

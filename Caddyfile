@@ -1,0 +1,25 @@
+# ── MedAI Caddyfile ──────────────────────────────────────────
+# Caddy auto-provisions HTTPS via Let's Encrypt.
+#
+# Usage:
+#   Replace yourdomain.com with your actual domain, then:
+#   Linux:   sudo caddy run --config Caddyfile
+#   Windows: caddy run --config Caddyfile
+#
+# If you don't have a domain, use the localhost block below instead.
+# ─────────────────────────────────────────────────────────────
+
+# ── With a domain (HTTPS auto) ────────────────────────────────
+# yourdomain.com {
+#     reverse_proxy localhost:8080
+# }
+
+# ── Without a domain (localhost HTTPS for testing) ────────────
+localhost {
+    reverse_proxy localhost:8080
+}
+
+# ── Plain HTTP on all interfaces (simplest option) ────────────
+:80 {
+    reverse_proxy localhost:8080
+}
