@@ -68,13 +68,13 @@ app:
 
   ollama:
     models:
-      mental-health: ${OLLAMA_MODEL_CHAT:qwen3-coder}
-      common-disease: ${OLLAMA_MODEL_CHAT:qwen3-coder}
-      complex-disease: ${OLLAMA_MODEL_CHAT:qwen3-coder}
-      medicine: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      mental-health: llama3.2:3b
+      common-disease: llama3.2:3b
+      complex-disease: llama3.2:3b
+      medicine: llama3.2:3b
       embedding: nomic-embed-text:latest
-      fallback: ${OLLAMA_MODEL_CHAT:qwen3-coder}
-      guidance: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      fallback: llama3.2:3b
+      guidance: llama3.2:3b
 
   confidence:
     threshold-common: 80

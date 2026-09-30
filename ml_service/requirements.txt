@@ -1,6 +1,6 @@
 # MedAI ML Service dependencies
 # torch and torchvision are installed separately in Dockerfile.ml
-# using the CPU-only wheel to keep image size small.
+# using the CPU-only wheel — do NOT add them here.
 
 Flask==3.0.3
 Flask-Cors==4.0.1
