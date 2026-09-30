@@ -1,0 +1,16 @@
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+# Copy the built JAR
+COPY target/medai-1.0.0.jar app.jar
+
+# Non-root user for security
+RUN addgroup -S medai && adduser -S medai -G medai
+USER medai
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", \
+  "-Xmx512m", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

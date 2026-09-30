@@ -8,19 +8,19 @@ if (!isLoggedIn()) window.location.href = '/login.html';
 
 const BOT_CONFIG = {
   'mental-health': {
-    name: 'Mental Health Counselor', icon: '🧠', endpoint: '/api/chat/mental-health',
+    name: 'Mental Health Counselor', iconName: 'brain', endpoint: '/api/chat/mental-health',
     streamEndpoint: '/api/chat/mental-health/stream',
     welcome: 'I\'m here to listen and support you. Tell me how you\'re feeling — I\'ll ask questions one at a time to better understand your situation.',
     botType: 'MENTAL_HEALTH'
   },
   'common-disease': {
-    name: 'Common Disease Diagnoser', icon: '🩺', endpoint: '/api/chat/common-disease',
+    name: 'Common Disease Diagnoser', iconName: 'stethoscope', endpoint: '/api/chat/common-disease',
     streamEndpoint: '/api/chat/common-disease/stream',
     welcome: 'Hello! Describe your main symptom and I\'ll ask targeted questions to help identify what\'s going on.',
     botType: 'COMMON_DISEASE'
   },
   'complex-disease': {
-    name: 'Complex Disease Specialist', icon: '🔬', endpoint: '/api/chat/complex-disease',
+    name: 'Complex Disease Specialist', iconName: 'microscope', endpoint: '/api/chat/complex-disease',
     streamEndpoint: '/api/chat/complex-disease/stream',
     welcome: 'I\'m Dr. MedAI, a senior consultant. Please describe your primary concern and I\'ll conduct a thorough clinical assessment.',
     botType: 'COMPLEX_DISEASE'
@@ -54,10 +54,10 @@ function selectBot(bot) {
   });
 
   const cfg = BOT_CONFIG[bot];
-  document.getElementById('chat-bot-icon').textContent = cfg.icon;
+  document.getElementById('chat-bot-icon').innerHTML = icon(cfg.iconName, 18);
   document.getElementById('chat-bot-label').textContent = cfg.name;
   document.getElementById('session-badge').textContent = '';
-  document.getElementById('welcome-icon').textContent = cfg.icon;
+  document.getElementById('welcome-icon').innerHTML = icon(cfg.iconName, 48);
   document.getElementById('welcome-title').textContent = cfg.name;
   document.getElementById('welcome-desc').textContent = cfg.welcome;
 
@@ -148,11 +148,11 @@ async function sendMessage() {
 
       loadSessionList();
     } else {
-      appendBubble('assistant', '⚠️ Sorry, I encountered an error. Please try again.');
+      appendBubble('assistant', `${icon('alert-triangle', 14)} Sorry, I encountered an error. Please try again.`);
     }
   } catch (err) {
     removeTyping(typingId);
-    appendBubble('assistant', '⚠️ Connection error. Please check the server is running.');
+    appendBubble('assistant', `${icon('alert-triangle', 14)} Connection error. Please check the server is running.`);
     console.error(err);
   } finally {
     isStreaming = false;
@@ -169,7 +169,7 @@ function appendBubble(role, content, isEmergency = false) {
 
   const avatar = document.createElement('div');
   avatar.className = 'bubble-avatar';
-  avatar.textContent = role === 'user' ? '👤' : BOT_CONFIG[currentBot].icon;
+  avatar.innerHTML = role === 'user' ? icon('user', 18) : icon(BOT_CONFIG[currentBot].iconName, 18);
 
   const bubble = document.createElement('div');
   bubble.className = `bubble bubble-${role}${isEmergency ? ' emergency' : ''}`;
@@ -206,7 +206,7 @@ function showTyping() {
   row.className = 'bubble-row assistant';
   row.id = id;
   row.innerHTML = `
-    <div class="bubble-avatar">${BOT_CONFIG[currentBot].icon}</div>
+    <div class="bubble-avatar">${icon(BOT_CONFIG[currentBot].iconName, 18)}</div>
     <div class="bubble-typing">
       <div class="typing-indicator">
         <span class="typing-dot"></span>
@@ -228,7 +228,7 @@ function clearMessages() {
   const container = document.getElementById('chat-messages');
   container.innerHTML = `
     <div id="welcome-msg" style="text-align:center;padding:40px 20px;">
-      <div style="font-size:48px;margin-bottom:12px;" id="welcome-icon">${BOT_CONFIG[currentBot].icon}</div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px;" id="welcome-icon">${icon(BOT_CONFIG[currentBot].iconName, 48)}</div>
       <h3 style="font-size:16px;margin-bottom:8px;" id="welcome-title">${BOT_CONFIG[currentBot].name}</h3>
       <p style="font-size:13px;color:var(--text-muted);max-width:320px;margin:0 auto;" id="welcome-desc">${BOT_CONFIG[currentBot].welcome}</p>
     </div>`;

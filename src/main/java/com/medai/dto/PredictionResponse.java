@@ -36,4 +36,7 @@ public class PredictionResponse {
 
     // Error field (null on success)
     private String error;
+
+    // Annotated scan image (base64-encoded JPEG, image predictions only)
+    private String annotatedImageB64;
 }

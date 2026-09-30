@@ -1,59 +1,78 @@
 # ── Maven ──────────────────────────────────────────────────
 target/
 *.class
-*.jar
-*.war
-*.ear
-
-# ── Spring Boot ────────────────────────────────────────────
-spring-boot-*.jar
 
 # ── IDE ────────────────────────────────────────────────────
 .idea/
 *.iml
-*.ipr
-*.iws
 .vscode/
 *.code-workspace
 .settings/
 .classpath
 .project
 .factorypath
+.claude/
 
-# ── Python ML service ──────────────────────────────────────
-ml_service/__pycache__/
-ml_service/**/__pycache__/
-ml_service/*.pyc
-ml_service/**/*.pyc
+# ── Python ─────────────────────────────────────────────────
 ml_service/venv/
 ml_service/.venv/
-ml_service/env/
+**/__pycache__/
+*.pyc
 
-# ── ML model files (large binaries — download separately) ──
+# ── Model weights (not committed — download separately) ─────
+ml_service/*.pt
+ml_service/weights/
+ml_service/skin_cancer_workdir/
+
+# ── All training runs/artifacts ─────────────────────────────
+ml_service/runs/
+ml_service/*_runs/
+ml_service/run_ml_models/
+
+# ── All raw datasets and processed datasets ─────────────────
+ml_service/*_dataset/
+ml_service/*_dataset_*/
+ml_service/*_raw/
+ml_service/*_kaggle_raw/
+ml_service/dataset/
+ml_service/ds/
+ml_service/nhanes_data/
+ml_service/kidney_cancer_cyst_stone_dataset/
+ml_service/kidney_cancer_cyst_stone_raw/
+ml_service/liver_cancer_nnunet/
+ml_service/pancreatic_cancer_raw/
+ml_service/pancreatic_cancer_dataset/
+
+# ── Old tabular pkl models (replaced by joblib) ─────────────
 ml_service/models/tabular/*.pkl
-ml_service/models/image/
-!ml_service/models/.gitkeep
-!ml_service/models/tabular/.gitkeep
 
-# ── Logs ───────────────────────────────────────────────────
-*.log
-logs/
+# ── Training scripts (not needed to run) ────────────────────
+ml_service/train*.py
+ml_service/blood_cancer_train.py
+ml_service/blood_cancer_check_localiser.py
+ml_service/test.py
+ml_service/util.py
+ml_service/train/
 
-# ── OS ─────────────────────────────────────────────────────
+# ── Misc ML artifacts ───────────────────────────────────────
+ml_service/*.yaml
+ml_service/*.json
+ml_service/*.csv
+ml_service/*.log
+ml_service/*.nii.gz
+ml_service/*.tar
+
+# ── Secrets ─────────────────────────────────────────────────
+.env
+*.env
+
+# ── History & OS ────────────────────────────────────────────
+.history/
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ── Environment / secrets ──────────────────────────────────
-.env
-.env.local
-*.env
-
-# ── Node (if any tooling added later) ─────────────────────
-node_modules/
-npm-debug.log
-
-# ── Misc ───────────────────────────────────────────────────
-*.orig
-*.bak
-*.tmp
+# ── Deployment scripts (machine-specific) ───────────────────
+transfer-to-server.sh
+lung_cancer_raw
+ml_service/lung_cancer_raw

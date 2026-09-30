@@ -1,115 +1,62 @@
 """
-Image-based cancer diagnosis routes.
-Accepts multipart file uploads from Spring Boot.
+Image-based cancer prediction routes.
+Accepts multipart image uploads from Spring Boot.
 """
-
-from flask import Blueprint, request, jsonify
-from predictors.image.lung_image_predictor import LungImagePredictor
-from predictors.image.skin_predictor import SkinPredictor
-from predictors.image.blood_predictor import BloodPredictor
-from predictors.image.kidney_image_predictor import KidneyImagePredictor
-from predictors.image.brain_predictor import BrainPredictor
 import io
+
+from flask import Blueprint, jsonify, request
 from PIL import Image
 
+from predictors.image.yolo_cancer_predictor import YoloCancerPredictor
+
+
 image_bp = Blueprint("image", __name__)
-
-_lung_img = None
-_skin = None
-_blood = None
-_kidney_img = None
-_brain = None
+_predictors = {}
 
 
-def get_lung_img():
-    global _lung_img
-    if _lung_img is None:
-        _lung_img = LungImagePredictor()
-    return _lung_img
+def get_predictor(cancer):
+    if cancer not in _predictors:
+        _predictors[cancer] = YoloCancerPredictor(cancer)
+    return _predictors[cancer]
 
 
-def get_skin():
-    global _skin
-    if _skin is None:
-        _skin = SkinPredictor()
-    return _skin
-
-
-def get_blood():
-    global _blood
-    if _blood is None:
-        _blood = BloodPredictor()
-    return _blood
-
-
-def get_kidney_img():
-    global _kidney_img
-    if _kidney_img is None:
-        _kidney_img = KidneyImagePredictor()
-    return _kidney_img
-
-
-def get_brain():
-    global _brain
-    if _brain is None:
-        _brain = BrainPredictor()
-    return _brain
-
-
-def read_image(request):
+def predict(cancer):
     if "image" not in request.files:
-        raise ValueError("No image file provided. Use multipart field 'image'.")
-    file = request.files["image"]
-    img_bytes = file.read()
-    image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    return image
+        return jsonify({"error": "No image file provided. Use multipart field 'image'."}), 400
+    try:
+        image = Image.open(io.BytesIO(request.files["image"].read())).convert("RGB")
+        return jsonify(get_predictor(cancer).predict(image))
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @image_bp.route("/predict/image/lung", methods=["POST"])
 def predict_lung_image():
-    try:
-        image = read_image(request)
-        result = get_lung_img().predict(image)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("lung")
+
+
+@image_bp.route("/predict/image/liver", methods=["POST"])
+def predict_liver_image():
+    return predict("liver")
 
 
 @image_bp.route("/predict/image/skin", methods=["POST"])
 def predict_skin():
-    try:
-        image = read_image(request)
-        result = get_skin().predict(image)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("skin")
 
 
 @image_bp.route("/predict/image/blood", methods=["POST"])
 def predict_blood():
-    try:
-        image = read_image(request)
-        result = get_blood().predict(image)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("blood")
 
 
 @image_bp.route("/predict/image/kidney", methods=["POST"])
 def predict_kidney_image():
-    try:
-        image = read_image(request)
-        result = get_kidney_img().predict(image)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("kidney")
 
 
 @image_bp.route("/predict/image/brain", methods=["POST"])
 def predict_brain():
-    try:
-        image = read_image(request)
-        result = get_brain().predict(image)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("brain")

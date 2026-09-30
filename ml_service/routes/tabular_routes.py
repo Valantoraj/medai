@@ -1,124 +1,54 @@
 """
-Tabular (form-based) disease prediction routes.
-All endpoints called by Spring Boot via HTTP POST with JSON body.
+JSON prediction routes backed by the saved train_ml_models.py bundles.
 """
-
-from flask import Blueprint, request, jsonify
-from predictors.tabular.heart_predictor import HeartPredictor
-from predictors.tabular.stroke_predictor import StrokePredictor
-from predictors.tabular.diabetes_predictor import DiabetesPredictor
-from predictors.tabular.lung_tabular_predictor import LungTabularPredictor
-from predictors.tabular.kidney_predictor import KidneyPredictor
-from predictors.tabular.liver_predictor import LiverPredictor
+from flask import Blueprint, jsonify, request
+from predictors.tabular.trained_model_predictor import TrainedModelPredictor
 
 tabular_bp = Blueprint("tabular", __name__)
-
-# Lazy-loaded singletons
-_heart = None
-_stroke = None
-_diabetes = None
-_lung = None
-_kidney = None
-_liver = None
+_predictors = {}
 
 
-def get_heart():
-    global _heart
-    if _heart is None:
-        _heart = HeartPredictor()
-    return _heart
-
-
-def get_stroke():
-    global _stroke
-    if _stroke is None:
-        _stroke = StrokePredictor()
-    return _stroke
-
-
-def get_diabetes():
-    global _diabetes
-    if _diabetes is None:
-        _diabetes = DiabetesPredictor()
-    return _diabetes
-
-
-def get_lung():
-    global _lung
-    if _lung is None:
-        _lung = LungTabularPredictor()
-    return _lung
-
-
-def get_kidney():
-    global _kidney
-    if _kidney is None:
-        _kidney = KidneyPredictor()
-    return _kidney
-
-
-def get_liver():
-    global _liver
-    if _liver is None:
-        _liver = LiverPredictor()
-    return _liver
+def predict(task):
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Provide prediction fields as a JSON object."}), 400
+    try:
+        if task not in _predictors:
+            _predictors[task] = TrainedModelPredictor(task)
+        return jsonify(_predictors[task].predict(data))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 503
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @tabular_bp.route("/predict/heart", methods=["POST"])
 def predict_heart():
-    try:
-        data = request.get_json()
-        result = get_heart().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("heart")
 
 
 @tabular_bp.route("/predict/stroke", methods=["POST"])
 def predict_stroke():
-    try:
-        data = request.get_json()
-        result = get_stroke().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("stroke")
 
 
 @tabular_bp.route("/predict/diabetes", methods=["POST"])
 def predict_diabetes():
-    try:
-        data = request.get_json()
-        result = get_diabetes().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("diabetes")
 
 
 @tabular_bp.route("/predict/lung-tabular", methods=["POST"])
 def predict_lung():
-    try:
-        data = request.get_json()
-        result = get_lung().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("lung-tabular")
 
 
 @tabular_bp.route("/predict/kidney-tabular", methods=["POST"])
 def predict_kidney():
-    try:
-        data = request.get_json()
-        result = get_kidney().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("kidney-tabular")
 
 
 @tabular_bp.route("/predict/liver", methods=["POST"])
 def predict_liver():
-    try:
-        data = request.get_json()
-        result = get_liver().predict(data)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return predict("liver")

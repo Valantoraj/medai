@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: medai
+      POSTGRES_USER: medai
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"      # localhost only — never exposed to internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Ollama LLM ──────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama   # models stored in named volume, survive rebuilds
+    ports:
+      - "127.0.0.1:11434:11434"    # localhost only
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ── Python ML service (Flask + YOLO + tabular models) ──────────────────────
+  ml-service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile.ml
+    restart: unless-stopped
+    volumes:
+      # Model files mounted read-only — not baked into the image
+      - ./ml_service/blood_cancer_model.pt:/app/blood_cancer_model.pt:ro
+      - ./ml_service/lung_cancer_model.pt:/app/lung_cancer_model.pt:ro
+      - ./ml_service/kidney_cancer_cyst_stone_model.pt:/app/kidney_cancer_cyst_stone_model.pt:ro
+      - ./ml_service/skin_cancer_model.pt:/app/skin_cancer_model.pt:ro
+      - ./ml_service/runs:/app/runs:ro
+      - ./ml_service/run_ml_models:/app/run_ml_models:ro
+    ports:
+      - "127.0.0.1:5001:5001"      # localhost only
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:http://localhost:8080}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Spring Boot backend + frontend ─────────────────────────────────────────
+  spring-boot:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+    restart: unless-stopped
+    ports:
+      - "8080:8080"                  # Caddy will proxy this to 443
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medai
+      - SPRING_DATASOURCE_USERNAME=medai
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_AI_OLLAMA_BASE_URL=http://ollama:11434
+      - APP_ML_SERVICE_BASE_URL=http://ml-service:5001
+      - APP_JWT_SECRET=${JWT_SECRET}
+      - APP_JWT_EXPIRATION=86400000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  ollama_data:

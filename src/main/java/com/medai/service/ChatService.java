@@ -29,6 +29,7 @@ public class ChatService {
     private final OllamaService ollamaService;
     private final ConfidenceEngine confidenceEngine;
     private final PersonalisationService personalisationService;
+    private final com.medai.config.OllamaConfig ollamaConfig;
 
     private static final int HISTORY_WINDOW = 20; // last N messages loaded for context
 
@@ -216,11 +217,11 @@ public class ChatService {
 
     private String resolveModel(String botType) {
         return switch (botType.toUpperCase()) {
-            case "MENTAL_HEALTH" -> "medllama2";
-            case "COMMON_DISEASE" -> "medllama2";
-            case "COMPLEX_DISEASE" -> "meditron";
-            case "MEDICINE" -> "qwen3.5:latest";
-            default -> "llama3.1:8b";
+            case "MENTAL_HEALTH"   -> ollamaConfig.getMentalHealthModel();
+            case "COMMON_DISEASE"  -> ollamaConfig.getCommonDiseaseModel();
+            case "COMPLEX_DISEASE" -> ollamaConfig.getComplexDiseaseModel();
+            case "MEDICINE"        -> ollamaConfig.getMedicineModel();
+            default                -> ollamaConfig.getFallbackModel();
         };
     }
 

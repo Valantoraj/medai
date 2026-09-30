@@ -1,0 +1,278 @@
+================================================================================
+  MedAI — Complete Oracle Cloud Deployment Guide
+  Estimated time: 4–6 hours (mostly waiting for downloads)
+  Active effort:  ~1.5 hours
+================================================================================
+
+Everything that could be automated has already been done for you.
+You only need to do the steps marked [YOU DO THIS].
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 1 — Create Oracle Cloud Account (20 minutes) [YOU DO THIS]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: https://cloud.oracle.com/free
+2. Click "Start for free"
+3. Fill in name, email, country. Use a real credit card (you will NOT be charged).
+4. Verify your email and phone number.
+5. Wait for account activation email (5–30 minutes).
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 2 — Create the VM (15 minutes) [YOU DO THIS]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Log in to cloud.oracle.com → Click "Compute" → "Instances" → "Create instance"
+
+2. Name: medai-server
+
+3. Image: Click "Change image"
+   → Select "Canonical Ubuntu"
+   → Version: 22.04 (ARM64/aarch64)
+   → Click Select
+
+4. Shape: Click "Change shape"
+   → Select "Ampere" tab
+   → Shape: VM.Standard.A1.Flex
+   → OCPUs: 4
+   → Memory: 24 GB
+   → Click Select
+
+5. Networking: leave defaults (a VCN will be created automatically)
+
+6. SSH keys: Click "Generate a key pair for me"
+   → Download BOTH the private key (.key file) and public key
+   → Save them somewhere safe on your machine
+   → Rename the private key to: medai_oracle.key
+   → Run: chmod 600 medai_oracle.key
+
+7. Boot volume: Click "Specify a custom boot volume size"
+   → Set to: 100 GB
+   → Leave encryption as default
+
+8. Click "Create" — instance will be in PROVISIONING state for 2–3 minutes.
+
+9. Once state shows RUNNING, copy the "Public IP address" — you'll need it.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 3 — Open ports in Oracle firewall (5 minutes) [YOU DO THIS]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Oracle has TWO firewalls — both must be opened.
+
+Part A — Security List (Oracle's cloud firewall):
+1. In the instance page, click "Subnet" link in the Primary VNIC section
+2. Click "Default Security List"
+3. Click "Add Ingress Rules"
+4. Add these rules one by one:
+   Source CIDR: 0.0.0.0/0  Protocol: TCP  Port: 80
+   Source CIDR: 0.0.0.0/0  Protocol: TCP  Port: 443
+   (Port 22 should already exist — SSH)
+
+Part B — You'll open the OS firewall via the setup script in Phase 5.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 4 — Transfer project files (10–30 minutes depending on internet)
+              [YOU DO THIS — run on YOUR LOCAL machine]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Edit transfer-to-server.sh:
+   Open /home/psg/Desktop/medai/transfer-to-server.sh
+   Replace YOUR_ORACLE_SERVER_IP with the IP you copied in Phase 2 step 9
+   Replace ~/.ssh/id_rsa with the path to your medai_oracle.key file
+
+2. Run the transfer:
+   cd /home/psg/Desktop/medai
+   bash transfer-to-server.sh
+
+   This copies everything except the venv, dataset, and .git folder.
+   The ML model .pt files ARE included — they're needed on the server.
+   Estimated transfer size: ~600 MB
+   Estimated time: 5–20 minutes depending on your upload speed.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 5 — SSH into server and run bootstrap (30–60 minutes)
+              [YOU DO THIS — run on the SERVER]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. SSH into your server:
+   ssh -i medai_oracle.key ubuntu@YOUR_SERVER_IP
+
+2. Run the bootstrap script (installs Docker, Caddy, Ollama, pulls models):
+   cd ~/medai
+   bash server-setup.sh
+
+   This will take 20–40 minutes mainly because:
+   - llama3.2:3b download: ~2 GB
+   - nomic-embed-text download: ~274 MB
+   Go get a coffee.
+
+3. IMPORTANT: After the script finishes, log out and log back in so
+   Docker group permissions take effect:
+   exit
+   ssh -i medai_oracle.key ubuntu@YOUR_SERVER_IP
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 6 — Configure secrets and start the app (15 minutes)
+              [YOU DO THIS — on the SERVER]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Create your .env file:
+   cd ~/medai
+   cp .env.example .env
+   nano .env
+
+2. Fill in the values in nano:
+
+   DB_PASSWORD — run this on the server to generate one:
+     openssl rand -base64 24
+   Copy the output and paste it as DB_PASSWORD value.
+
+   JWT_SECRET — run this:
+     openssl rand -hex 32
+   Copy the output and paste it as JWT_SECRET value.
+
+   ALLOWED_ORIGIN — set to:
+     http://YOUR_SERVER_IP:8080
+   (or https://yourdomain.com if you have a domain)
+
+   OLLAMA_MODEL_CHAT — set to:
+     llama3.2:3b
+   (this is the small 2 GB model that runs on CPU — qwen3-coder won't fit)
+
+   Save with: Ctrl+O  Enter  Ctrl+X
+
+3. Build the Docker images (takes 10–20 minutes first time):
+   docker compose build
+
+4. Start all services:
+   docker compose up -d
+
+5. Watch the startup logs:
+   docker compose logs -f
+
+   Wait until you see Spring Boot print:
+   "Started MedaiApplication in X seconds"
+   Then press Ctrl+C to stop watching logs (app keeps running).
+
+6. Test it:
+   curl http://localhost:8080
+   You should get back an HTML page.
+
+7. Test from your browser:
+   Open: http://YOUR_SERVER_IP:8080
+   You should see the MedAI login page.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 7 — Set up HTTPS with Caddy (10 minutes)
+              Only needed if you have a domain name. Skip if using IP only.
+              [YOU DO THIS — on the SERVER]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Point your domain's A record to YOUR_SERVER_IP
+   (do this in your domain registrar — Namecheap, GoDaddy, Cloudflare DNS, etc.)
+   Wait 5–10 minutes for DNS to propagate.
+
+2. Create the Caddy config:
+   sudo nano /etc/caddy/Caddyfile
+
+   Replace the entire content with:
+   ────────────────────────────────
+   yourdomain.com {
+       reverse_proxy localhost:8080
+   }
+   ────────────────────────────────
+   Replace yourdomain.com with your actual domain.
+   Save: Ctrl+O  Enter  Ctrl+X
+
+3. Restart Caddy:
+   sudo systemctl restart caddy
+
+   Caddy will automatically get an HTTPS certificate from Let's Encrypt.
+   This takes about 30 seconds.
+
+4. Update your .env file:
+   nano ~/medai/.env
+   Change ALLOWED_ORIGIN to: https://yourdomain.com
+   Save and exit.
+
+5. Restart the app to pick up the new CORS setting:
+   docker compose up -d --force-recreate spring-boot ml-service
+
+6. Test: open https://yourdomain.com in browser.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MAINTENANCE — useful commands to know
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Check if everything is running:
+    docker compose ps
+
+  View live logs:
+    docker compose logs -f
+    docker compose logs -f spring-boot     # just Spring Boot
+    docker compose logs -f ml-service      # just Flask
+
+  Restart a single service:
+    docker compose restart spring-boot
+
+  Stop everything:
+    docker compose down
+
+  Start everything:
+    docker compose up -d
+
+  Update app after code changes (re-transfer files first):
+    docker compose build spring-boot
+    docker compose up -d --force-recreate spring-boot
+
+  Database backup:
+    docker exec medai-postgres-1 \
+      pg_dump -U medai medai > backup_$(date +%Y%m%d).sql
+
+  Check disk usage:
+    df -h
+    docker system df
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Site not loading at all?
+    → Check Oracle Security List has port 80/443 open (Phase 3)
+    → Run: sudo ufw status
+    → Run: docker compose ps   (all services should show "Up")
+
+  Spring Boot fails to start?
+    → docker compose logs spring-boot
+    → Most common cause: DB not ready yet, wait 30 seconds and retry:
+      docker compose restart spring-boot
+
+  ML service fails?
+    → docker compose logs ml-service
+    → Model file not found: check volumes in docker-compose.yml point
+      to the correct .pt file paths
+
+  Ollama model not found (guidance returns empty)?
+    → Check the model name in .env matches what ollama has:
+      docker exec medai-ollama-1 ollama list
+    → If llama3.2:3b is missing:
+      docker exec medai-ollama-1 ollama pull llama3.2:3b
+
+  Out of disk space?
+    → Remove unused Docker images: docker image prune -a
+    → Check usage: df -h
+
+  Image predictions very slow (30+ seconds)?
+    → Normal on ARM CPU without GPU. YOLO runs on CPU here.
+    → Nothing to fix — this is expected on Oracle Cloud free tier.
+
+================================================================================

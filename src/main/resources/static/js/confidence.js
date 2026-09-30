@@ -35,7 +35,7 @@ function showThresholdCard(condition, confidence) {
   card.style.display = '';
   card.innerHTML = `
     <div class="threshold-card">
-      <div class="threshold-card-title">✅ Assessment Ready</div>
+      <div class="threshold-card-title" style="display:flex;align-items:center;gap:6px;">${icon('check-circle', 14)} Assessment Ready</div>
       <div style="font-size:12px;margin-top:4px;">
         <strong>${condition}</strong> — ${Math.round(confidence)}% confidence
       </div>
@@ -49,5 +49,5 @@ function showHospitalTrigger(specialty) {
   const el = document.getElementById('hospital-trigger');
   if (!el) return;
   el.style.display = '';
-  el.innerHTML = `🏥 <span>Critical condition detected${specialty ? ` (${specialty})` : ''}. <a href="/hospitals.html" style="color:var(--warning);font-weight:700;">Find nearby hospitals →</a></span>`;
+  el.innerHTML = `<span style="display:flex;align-items:center;gap:6px;">${icon('hospital', 14)} Critical condition detected${specialty ? ` (${specialty})` : ''}. <a href="/hospitals.html" style="color:var(--warning);font-weight:700;">Find nearby hospitals &rarr;</a></span>`;
 }

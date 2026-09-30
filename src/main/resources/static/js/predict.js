@@ -1,128 +1,130 @@
-/* ============================================================
-   MedAI — predict.js
-   Disease risk prediction forms (6 tabular ML models)
-   ============================================================ */
-
+/* Tabular inference forms for the models trained by ml_service/train_ml_models.py. */
 if (!isLoggedIn()) window.location.href = '/login.html';
 
 let currentDisease = 'heart';
 
+const FIELD_GROUPS = [
+  {
+    title: 'Demographics and history',
+    fields: [
+      { id: 'age_years', label: 'Age (years)', max: 120 },
+      { id: 'sex_male1_female2', label: 'Sex', type: 'select', options: [['1', 'Male'], ['2', 'Female']] },
+      { id: 'bmi', label: 'BMI (kg/m²)', max: 80, step: '0.1' },
+      { id: 'waist_cm', label: 'Waist circumference (cm)', max: 250, step: '0.1' },
+      { id: 'height_cm', label: 'Height (cm)', max: 230, step: '0.1' },
+      { id: 'weight_kg', label: 'Weight (kg)', max: 350, step: '0.1' },
+      { id: 'race_ethnicity', label: 'Race/ethnicity (NHANES code)', type: 'select', options: [['1', 'Mexican American'], ['2', 'Other Hispanic'], ['3', 'Non-Hispanic White'], ['4', 'Non-Hispanic Black'], ['6', 'Non-Hispanic Asian'], ['7', 'Other']] },
+      { id: 'education_level', label: 'Education level', type: 'select', options: [['1', 'Less than 9th grade'], ['2', '9th–11th grade'], ['3', 'High school/GED'], ['4', 'Some college'], ['5', 'College graduate or above']] },
+      { id: 'income_poverty_ratio', label: 'Income-to-poverty ratio', max: 10, step: '0.01' },
+      { id: 'smoking_status', label: 'Smoking status', type: 'select', options: [['0', 'Never'], ['1', 'Former'], ['2', 'Current']] },
+      { id: 'cigs_per_day', label: 'Cigarettes per day', max: 100 },
+      { id: 'smoke_years', label: 'Years smoked', max: 100, step: '0.1' },
+      { id: 'pack_years', label: 'Pack-years', max: 200, step: '0.1' },
+      { id: 'told_high_bp', label: 'Previously told you have high blood pressure', type: 'select', options: [['1', 'Yes'], ['0', 'No']] },
+      { id: 'told_high_chol', label: 'Previously told you have high cholesterol', type: 'select', options: [['1', 'Yes'], ['0', 'No']] },
+      { id: 'family_hx_mi', label: 'Family history of heart attack', type: 'select', options: [['1', 'Yes'], ['0', 'No']] },
+      { id: 'family_hx_diabetes', label: 'Family history of diabetes', type: 'select', options: [['1', 'Yes'], ['0', 'No']] },
+      { id: 'alcohol_drinks_per_day', label: 'Drinks per drinking day (average)', max: 30, step: '0.1' }
+    ]
+  },
+  {
+    title: 'Blood pressure',
+    fields: [
+      { id: 'sbp_mmhg', label: 'Systolic blood pressure (mmHg)', max: 300 },
+      { id: 'dbp_mmhg', label: 'Diastolic blood pressure (mmHg)', max: 200 }
+    ]
+  },
+  {
+    title: 'Blood chemistry',
+    fields: [
+      { id: 'albumin_g_dl', label: 'Albumin (g/dL)', max: 10, step: '0.1' },
+      { id: 'alt_u_l', label: 'ALT (U/L)', max: 5000, step: '0.1' },
+      { id: 'ast_u_l', label: 'AST (U/L)', max: 5000, step: '0.1' },
+      { id: 'alp_u_l', label: 'Alkaline phosphatase (U/L)', max: 5000, step: '0.1' },
+      { id: 'bun_mg_dl', label: 'Blood urea nitrogen (mg/dL)', max: 300, step: '0.1' },
+      { id: 'calcium_mg_dl', label: 'Calcium (mg/dL)', max: 30, step: '0.1' },
+      { id: 'bicarbonate_mmol_l', label: 'Bicarbonate (mmol/L)', max: 100, step: '0.1' },
+      { id: 'creatinine_mg_dl', label: 'Creatinine (mg/dL)', max: 100, step: '0.01' },
+      { id: 'globulin_g_dl', label: 'Globulin (g/dL)', max: 15, step: '0.1' },
+      { id: 'glucose_serum_mg_dl', label: 'Serum glucose (mg/dL)', max: 1000, step: '0.1' },
+      { id: 'ggt_u_l', label: 'GGT (U/L)', max: 5000, step: '0.1' },
+      { id: 'iron_ug_dl', label: 'Iron (µg/dL)', max: 2000, step: '0.1' },
+      { id: 'ldh_u_l', label: 'LDH (U/L)', max: 10000, step: '0.1' },
+      { id: 'phosphorus_mg_dl', label: 'Phosphorus (mg/dL)', max: 30, step: '0.1' },
+      { id: 'bilirubin_total_mg_dl', label: 'Total bilirubin (mg/dL)', max: 100, step: '0.01' },
+      { id: 'total_protein_g_dl', label: 'Total protein (g/dL)', max: 20, step: '0.1' },
+      { id: 'uric_acid_mg_dl', label: 'Uric acid (mg/dL)', max: 50, step: '0.1' },
+      { id: 'sodium_mmol_l', label: 'Sodium (mmol/L)', max: 250, step: '0.1' },
+      { id: 'potassium_mmol_l', label: 'Potassium (mmol/L)', max: 30, step: '0.1' },
+      { id: 'chloride_mmol_l', label: 'Chloride (mmol/L)', max: 300, step: '0.1' }
+    ]
+  },
+  {
+    title: 'Complete blood count',
+    fields: [
+      { id: 'wbc_1000_ul', label: 'White blood cells (1000/µL)', max: 500, step: '0.01' },
+      { id: 'lymph_pct', label: 'Lymphocytes (%)', max: 100, step: '0.1' },
+      { id: 'mono_pct', label: 'Monocytes (%)', max: 100, step: '0.1' },
+      { id: 'neut_pct', label: 'Neutrophils (%)', max: 100, step: '0.1' },
+      { id: 'eos_pct', label: 'Eosinophils (%)', max: 100, step: '0.1' },
+      { id: 'baso_pct', label: 'Basophils (%)', max: 100, step: '0.1' },
+      { id: 'rbc_million_ul', label: 'Red blood cells (million/µL)', max: 20, step: '0.01' },
+      { id: 'hemoglobin_g_dl', label: 'Hemoglobin (g/dL)', max: 30, step: '0.1' },
+      { id: 'hematocrit_pct', label: 'Hematocrit (%)', max: 100, step: '0.1' },
+      { id: 'mcv_fl', label: 'MCV (fL)', max: 250, step: '0.1' },
+      { id: 'mch_pg', label: 'MCH (pg)', max: 100, step: '0.1' },
+      { id: 'mchc_g_dl', label: 'MCHC (g/dL)', max: 100, step: '0.1' },
+      { id: 'rdw_pct', label: 'RDW (%)', max: 100, step: '0.1' },
+      { id: 'platelets_1000_ul', label: 'Platelets (1000/µL)', max: 3000, step: '0.1' },
+      { id: 'mpv_fl', label: 'Mean platelet volume (fL)', max: 100, step: '0.1' }
+    ]
+  },
+  {
+    title: 'Lipids, glucose, and urine',
+    fields: [
+      { id: 'total_cholesterol_mg_dl', label: 'Total cholesterol (mg/dL)', max: 1500, step: '0.1' },
+      { id: 'hdl_mg_dl', label: 'HDL cholesterol (mg/dL)', max: 500, step: '0.1' },
+      { id: 'triglycerides_mg_dl', label: 'Triglycerides (mg/dL)', max: 10000, step: '0.1' },
+      { id: 'ldl_mg_dl', label: 'LDL cholesterol (mg/dL)', max: 1500, step: '0.1' },
+      { id: 'hba1c_pct', label: 'HbA1c (%)', max: 30, step: '0.1' },
+      { id: 'fasting_glucose_mg_dl', label: 'Fasting glucose (mg/dL)', max: 1500, step: '0.1' },
+      { id: 'urine_albumin_mg_l', label: 'Urine albumin (mg/L)', max: 100000, step: '0.1' },
+      { id: 'urine_creatinine_mg_dl', label: 'Urine creatinine (mg/dL)', max: 10000, step: '0.1' },
+      { id: 'acr_mg_g', label: 'Urine albumin/creatinine ratio (mg/g)', max: 100000, step: '0.1' },
+      { id: 'cotinine_ng_ml', label: 'Cotinine (ng/mL)', max: 10000, step: '0.1' },
+      { id: 'hscrp_mg_l', label: 'High-sensitivity CRP (mg/L)', max: 1000, step: '0.1' }
+    ]
+  }
+];
+
 const DISEASE_CONFIG = {
   heart: {
-    title: 'Heart Disease Risk Assessment',
-    icon: '❤️',
-    endpoint: '/api/predict/heart',
-    description: 'Assess your risk for coronary heart disease using 13 clinical parameters.',
-    fields: [
-      { id: 'age', label: 'Age', type: 'number', min: 1, max: 120, placeholder: '45' },
-      { id: 'sex', label: 'Sex', type: 'select', options: [['1','Male'],['0','Female']] },
-      { id: 'chest_pain_type', label: 'Chest Pain Type', type: 'select', options: [['1','Typical Angina'],['2','Atypical Angina'],['3','Non-Anginal Pain'],['4','Asymptomatic']] },
-      { id: 'resting_bp', label: 'Resting Blood Pressure (mmHg)', type: 'number', min: 60, max: 220, placeholder: '120' },
-      { id: 'cholesterol', label: 'Serum Cholesterol (mg/dl)', type: 'number', min: 100, max: 600, placeholder: '200' },
-      { id: 'fasting_blood_sugar', label: 'Fasting Blood Sugar > 120 mg/dl', type: 'select', options: [['1','Yes'],['0','No']] },
-      { id: 'resting_ecg', label: 'Resting ECG Result', type: 'select', options: [['0','Normal'],['1','ST-T Wave Abnormality'],['2','Left Ventricular Hypertrophy']] },
-      { id: 'max_heart_rate', label: 'Maximum Heart Rate Achieved', type: 'number', min: 60, max: 220, placeholder: '150' },
-      { id: 'exercise_angina', label: 'Exercise-Induced Angina', type: 'select', options: [['1','Yes'],['0','No']] },
-      { id: 'st_depression', label: 'ST Depression (Exercise vs Rest)', type: 'number', min: 0, max: 10, placeholder: '1.0', step: '0.1' },
-      { id: 'slope_of_st', label: 'Slope of Peak Exercise ST', type: 'select', options: [['1','Upsloping'],['2','Flat'],['3','Downsloping']] },
-      { id: 'num_vessels', label: 'Number of Major Vessels (0-3)', type: 'number', min: 0, max: 3, placeholder: '0' },
-      { id: 'thal', label: 'Thalassemia', type: 'select', options: [['3','Normal'],['6','Fixed Defect'],['7','Reversible Defect']] }
-    ]
+    title: 'Heart Disease Risk Assessment', iconName: 'heart', endpoint: '/api/predict/heart',
+    description: 'NHANES stacked-ensemble model (heart_disease_model.joblib) for doctor-diagnosed heart disease — CHF, coronary heart disease, angina, or heart attack (MCQ160B–E).'
   },
   stroke: {
-    title: 'Stroke Risk Assessment',
-    icon: '🧠',
-    endpoint: '/api/predict/stroke',
-    description: 'Evaluate your stroke risk based on 10 clinical and lifestyle factors.',
-    fields: [
-      { id: 'age', label: 'Age', type: 'number', min: 1, max: 120, placeholder: '55' },
-      { id: 'gender', label: 'Gender', type: 'select', options: [['1','Male'],['0','Female'],['0.5','Other']] },
-      { id: 'hypertension', label: 'Hypertension', type: 'select', options: [['1','Yes'],['0','No']] },
-      { id: 'heart_disease_history', label: 'Heart Disease History', type: 'select', options: [['1','Yes'],['0','No']] },
-      { id: 'ever_married', label: 'Ever Married', type: 'select', options: [['1','Yes'],['0','No']] },
-      { id: 'work_type', label: 'Work Type', type: 'select', options: [['0','Never Worked'],['1','Children'],['2','Govt Job'],['3','Private'],['4','Self-employed']] },
-      { id: 'residence_type', label: 'Residence Type', type: 'select', options: [['1','Urban'],['0','Rural']] },
-      { id: 'avg_glucose_level', label: 'Average Glucose Level (mg/dL)', type: 'number', min: 50, max: 300, placeholder: '90' },
-      { id: 'bmi', label: 'BMI', type: 'number', min: 10, max: 60, placeholder: '25', step: '0.1' },
-      { id: 'smoking_status', label: 'Smoking Status', type: 'select', options: [['0','Never Smoked'],['1','Formerly Smoked'],['2','Smokes'],['3','Unknown']] }
-    ]
+    title: 'Stroke Risk Assessment', iconName: 'brain', endpoint: '/api/predict/stroke',
+    description: 'NHANES stacked-ensemble model (stroke_model.joblib) for doctor-diagnosed stroke (MCQ160F). Lab panel and clinical history features.'
   },
   diabetes: {
-    title: 'Diabetes Risk Assessment',
-    icon: '🩸',
-    endpoint: '/api/predict/diabetes',
-    description: 'Predict diabetes likelihood using the Pima Indian Diabetes dataset model.',
-    fields: [
-      { id: 'pregnancies', label: 'Number of Pregnancies', type: 'number', min: 0, max: 20, placeholder: '0' },
-      { id: 'glucose', label: 'Plasma Glucose (mg/dL)', type: 'number', min: 0, max: 300, placeholder: '100' },
-      { id: 'blood_pressure', label: 'Diastolic Blood Pressure (mmHg)', type: 'number', min: 0, max: 150, placeholder: '72' },
-      { id: 'skin_thickness', label: 'Triceps Skin Fold Thickness (mm)', type: 'number', min: 0, max: 100, placeholder: '20' },
-      { id: 'insulin', label: '2-Hour Serum Insulin (μU/mL)', type: 'number', min: 0, max: 900, placeholder: '80' },
-      { id: 'bmi', label: 'BMI', type: 'number', min: 0, max: 70, placeholder: '25', step: '0.1' },
-      { id: 'diabetes_pedigree_function', label: 'Diabetes Pedigree Function', type: 'number', min: 0, max: 3, placeholder: '0.5', step: '0.001' },
-      { id: 'age', label: 'Age', type: 'number', min: 1, max: 120, placeholder: '30' }
-    ]
+    title: 'Diabetes Screening', iconName: 'droplets', endpoint: '/api/predict/diabetes',
+    description: 'NHANES screening model (diabetes_screening_model.joblib). Predicts diagnosed or lab-defined diabetes (HbA1c ≥ 6.5 / FPG ≥ 126 mg/dL). Glucose and HbA1c are withheld from inputs to prevent label leakage.'
   },
   'lung-tabular': {
-    title: 'Lung Cancer Risk Assessment',
-    icon: '🫁',
-    endpoint: '/api/predict/lung-tabular',
-    description: 'Assess lung cancer risk based on environmental, lifestyle, and symptom factors.',
-    fields: [
-      { id: 'age', label: 'Age', type: 'number', min: 1, max: 120, placeholder: '50' },
-      { id: 'gender', label: 'Gender', type: 'select', options: [['1','Male'],['0','Female']] },
-      { id: 'air_pollution', label: 'Air Pollution Exposure (1-8)', type: 'number', min: 1, max: 8, placeholder: '3' },
-      { id: 'alcohol_use', label: 'Alcohol Use (1-8)', type: 'number', min: 1, max: 8, placeholder: '2' },
-      { id: 'dust_allergy', label: 'Dust Allergy (1-8)', type: 'number', min: 1, max: 8, placeholder: '2' },
-      { id: 'occupational_hazards', label: 'Occupational Hazards (1-8)', type: 'number', min: 1, max: 8, placeholder: '1' },
-      { id: 'genetic_risk', label: 'Genetic Risk (1-7)', type: 'number', min: 1, max: 7, placeholder: '2' },
-      { id: 'chronic_lung_disease', label: 'Chronic Lung Disease (1-7)', type: 'number', min: 1, max: 7, placeholder: '1' },
-      { id: 'balanced_diet', label: 'Balanced Diet (1-7)', type: 'number', min: 1, max: 7, placeholder: '4' },
-      { id: 'obesity', label: 'Obesity (1-7)', type: 'number', min: 1, max: 7, placeholder: '2' },
-      { id: 'smoking', label: 'Smoking (1-8)', type: 'number', min: 1, max: 8, placeholder: '2' },
-      { id: 'passive_smoker', label: 'Passive Smoker (1-8)', type: 'number', min: 1, max: 8, placeholder: '2' },
-      { id: 'chest_pain', label: 'Chest Pain (1-9)', type: 'number', min: 1, max: 9, placeholder: '2' },
-      { id: 'coughing_of_blood', label: 'Coughing of Blood (1-9)', type: 'number', min: 1, max: 9, placeholder: '1' },
-      { id: 'fatigue', label: 'Fatigue (1-9)', type: 'number', min: 1, max: 9, placeholder: '2' }
-    ]
+    title: 'Lung Disease Risk Assessment', iconName: 'wind', endpoint: '/api/predict/lung-tabular',
+    description: 'NHANES stacked-ensemble model (lung_disease_model.joblib) for emphysema, chronic bronchitis, and COPD (MCQ160G/K/P). Smoking history and lab features.'
   },
   'kidney-tabular': {
-    title: 'Kidney Stone Risk Assessment',
-    icon: '🫘',
-    endpoint: '/api/predict/kidney-tabular',
-    description: 'Assess kidney stone risk from 6 urine and blood chemistry parameters.',
-    fields: [
-      { id: 'urine_gravity', label: 'Urine Specific Gravity', type: 'number', min: 1.001, max: 1.040, placeholder: '1.015', step: '0.001' },
-      { id: 'urine_ph', label: 'Urine pH', type: 'number', min: 4.5, max: 8.5, placeholder: '6.5', step: '0.1' },
-      { id: 'urine_osmolality', label: 'Urine Osmolality (mOsm/kg)', type: 'number', min: 50, max: 1200, placeholder: '500' },
-      { id: 'urine_conductivity', label: 'Urine Conductivity (mS/cm)', type: 'number', min: 0.5, max: 40, placeholder: '14', step: '0.1' },
-      { id: 'urea', label: 'Blood Urea (mmol/L)', type: 'number', min: 10, max: 500, placeholder: '100' },
-      { id: 'calcium', label: 'Urinary Calcium (mmol/L)', type: 'number', min: 0, max: 10, placeholder: '2', step: '0.1' }
-    ]
+    title: 'Chronic Kidney Disease Risk', iconName: 'bean', endpoint: '/api/predict/kidney-tabular',
+    description: 'NHANES stacked-ensemble model (kidney_ckd_selfreport_model.joblib) for self-reported weak or failing kidneys (KIQ022). eGFR, creatinine, and urine albumin are key inputs.'
   },
   liver: {
-    title: 'Liver Disease Risk Assessment',
-    icon: '🟤',
-    endpoint: '/api/predict/liver',
-    description: 'Predict liver disease risk from 10 liver function test parameters.',
-    fields: [
-      { id: 'age', label: 'Age', type: 'number', min: 1, max: 120, placeholder: '45' },
-      { id: 'gender', label: 'Gender', type: 'select', options: [['1','Male'],['0','Female']] },
-      { id: 'total_bilirubin', label: 'Total Bilirubin (mg/dL)', type: 'number', min: 0, max: 75, placeholder: '1.0', step: '0.1' },
-      { id: 'direct_bilirubin', label: 'Direct Bilirubin (mg/dL)', type: 'number', min: 0, max: 20, placeholder: '0.3', step: '0.1' },
-      { id: 'alkaline_phosphotase', label: 'Alkaline Phosphotase (IU/L)', type: 'number', min: 60, max: 2200, placeholder: '150' },
-      { id: 'alamine_aminotransferase', label: 'Alamine Aminotransferase / ALT (IU/L)', type: 'number', min: 10, max: 2000, placeholder: '40' },
-      { id: 'aspartate_aminotransferase', label: 'Aspartate Aminotransferase / AST (IU/L)', type: 'number', min: 10, max: 5000, placeholder: '40' },
-      { id: 'total_proteins', label: 'Total Proteins (g/dL)', type: 'number', min: 2, max: 10, placeholder: '6.5', step: '0.1' },
-      { id: 'albumin', label: 'Albumin (g/dL)', type: 'number', min: 0, max: 6, placeholder: '3.5', step: '0.1' },
-      { id: 'albumin_globulin_ratio', label: 'Albumin/Globulin Ratio', type: 'number', min: 0, max: 3, placeholder: '1.0', step: '0.01' }
-    ]
+    title: 'Liver Disease Risk Assessment', iconName: 'layers', endpoint: '/api/predict/liver',
+    description: 'NHANES stacked-ensemble model (liver_disease_model.joblib) for doctor-diagnosed liver condition (MCQ160L). ALT, AST, GGT, bilirubin, and FIB-4 index are key inputs.'
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  selectDisease('heart');
-});
+document.addEventListener('DOMContentLoaded', () => selectDisease('heart'));
 
 function selectDisease(disease) {
   currentDisease = disease;
@@ -133,72 +135,73 @@ function selectDisease(disease) {
   document.getElementById('result-container').innerHTML = '';
 }
 
-function renderForm(disease) {
-  const cfg = DISEASE_CONFIG[disease];
-  const halfLen = Math.ceil(cfg.fields.length / 2);
-  const col1 = cfg.fields.slice(0, halfLen);
-  const col2 = cfg.fields.slice(halfLen);
-
-  function fieldHtml(f) {
-    if (f.type === 'select') {
-      return `<div class="form-group">
-        <label class="form-label">${f.label}</label>
-        <select class="form-input" id="field-${f.id}" name="${f.id}">
-          ${f.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
-        </select>
-      </div>`;
-    }
+function fieldHtml(field) {
+  if (field.type === 'select') {
     return `<div class="form-group">
-      <label class="form-label">${f.label}</label>
-      <input class="form-input" type="number" id="field-${f.id}" name="${f.id}"
-        min="${f.min}" max="${f.max}" step="${f.step || 1}" placeholder="${f.placeholder}" required/>
+      <label class="form-label" for="field-${field.id}">${field.label}</label>
+      <select class="form-input" id="field-${field.id}" name="${field.id}">
+        <option value="">Choose if known</option>
+        ${field.options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
+      </select>
     </div>`;
   }
+  return `<div class="form-group">
+    <label class="form-label" for="field-${field.id}">${field.label}</label>
+    <input class="form-input" type="number" id="field-${field.id}" name="${field.id}"
+      min="0" max="${field.max || ''}" step="${field.step || 'any'}" placeholder="Leave blank if unknown"/>
+  </div>`;
+}
+
+function renderForm(disease) {
+  const cfg = DISEASE_CONFIG[disease];
+  const groups = FIELD_GROUPS.map((group, index) => `
+    <details class="input-group" ${index < 2 ? 'open' : ''}>
+      <summary>${group.title}</summary>
+      <div class="predict-grid input-grid">${group.fields.map(fieldHtml).join('')}</div>
+    </details>`).join('');
 
   document.getElementById('form-container').innerHTML = `
     <div style="margin-bottom:20px;">
       <h2 style="font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px;">
-        <span>${cfg.icon}</span> ${cfg.title}
+        ${icon(cfg.iconName, 20)} ${cfg.title}
       </h2>
       <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">${cfg.description}</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+        Enter at least five available measurements or history values. Unknown fields can stay blank;
+        the saved model pipeline handles missing values.
+      </p>
     </div>
     <form id="predict-form" onsubmit="submitPrediction(event)">
-      <div class="predict-grid">
-        <div>${col1.map(fieldHtml).join('')}</div>
-        <div>${col2.map(fieldHtml).join('')}</div>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:12px;">
-        <button type="submit" class="btn btn-primary btn-lg" id="predict-btn">
-          📊 Run Risk Assessment
-        </button>
+      ${groups}
+      <div style="margin-top:12px;display:flex;gap:12px;">
+        <button type="submit" class="btn btn-primary btn-lg" id="predict-btn">${icon('bar-chart-2', 15)} Run Risk Assessment</button>
         <button type="reset" class="btn btn-ghost">Reset</button>
       </div>
     </form>`;
 }
 
-async function submitPrediction(e) {
-  e.preventDefault();
+async function submitPrediction(event) {
+  event.preventDefault();
   const cfg = DISEASE_CONFIG[currentDisease];
-  const btn = document.getElementById('predict-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Analyzing…';
+  const button = document.getElementById('predict-btn');
+  button.disabled = true;
+  button.innerHTML = `${icon('loader-2', 15, 'spin')} Analyzing&hellip;`;
 
   const features = {};
-  cfg.fields.forEach(f => {
-    const el = document.getElementById(`field-${f.id}`);
-    if (el) features[f.id] = parseFloat(el.value) || 0;
+  FIELD_GROUPS.flatMap(group => group.fields).forEach(field => {
+    const value = document.getElementById(`field-${field.id}`)?.value.trim();
+    if (value !== undefined && value !== '') features[field.id] = Number(value);
   });
 
-  const res = await api('POST', cfg.endpoint, features);
-  btn.disabled = false;
-  btn.textContent = '📊 Run Risk Assessment';
+  const response = await api('POST', cfg.endpoint, features);
+  button.disabled = false;
+  button.innerHTML = `${icon('bar-chart-2', 15)} Run Risk Assessment`;
 
-  if (!res || !res.ok) {
-    showToast(res?.data?.error || 'Prediction failed. Is the ML service running?', 'error');
+  if (!response || !response.ok) {
+    showToast(response?.data?.error || 'Prediction failed. Is the ML service running?', 'error');
     return;
   }
-
-  renderResult(res.data);
+  renderResult(response.data);
 }
 
 function renderResult(data) {
@@ -214,39 +217,35 @@ function renderResult(data) {
           <h3 style="font-size:18px;font-weight:700;">${data.disease}</h3>
           <p style="font-size:12px;color:var(--text-muted);">Model: ${data.modelUsed || 'ML Model'}</p>
         </div>
-        <span class="badge badge-${(data.riskLevel||'medium').toLowerCase()}" style="font-size:13px;padding:6px 14px;">
+        <span class="badge badge-${(data.riskLevel || 'medium').toLowerCase()}" style="font-size:13px;padding:6px 14px;">
           ${data.riskLevel || 'MEDIUM'}
         </span>
       </div>
-
       <div style="margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
           <span style="font-size:13px;color:var(--text-2);">Risk Probability</span>
           <span style="font-size:22px;font-weight:800;font-family:monospace;color:${color};">${riskPct}</span>
         </div>
-        <div class="risk-meter">
-          <div class="risk-fill" style="width:${fillPct}%;background:${color};"></div>
-        </div>
+        <div class="risk-meter"><div class="risk-fill" style="width:${fillPct}%;background:${color};"></div></div>
+        ${data.decisionThreshold !== undefined ? `<p style="font-size:11px;color:var(--text-muted);margin-top:5px;">Model decision threshold: ${Math.round(data.decisionThreshold * 100)}%</p>` : ''}
       </div>
-
       ${data.triggerHospitalFinder ? `
-        <div class="hospital-trigger" style="margin-bottom:16px;">
-          🏥 <strong>High risk detected.</strong>
-          <a href="/hospitals.html?urgent=true&specialty=${encodeURIComponent(data.hospitalSpecialtyFilter || '')}" style="color:var(--warning);font-weight:700;margin-left:6px;">
-            Find nearby ${data.hospitalSpecialtyFilter || 'hospitals'} →
+        <div class="hospital-trigger" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          ${icon('hospital', 15)} <strong>High risk detected.</strong>
+          <a href="/hospitals.html?urgent=true&specialty=${encodeURIComponent(data.hospitalSpecialtyFilter || '')}" style="color:var(--warning);font-weight:700;margin-left:4px;">
+            Find nearby ${data.hospitalSpecialtyFilter || 'hospitals'} &rarr;
           </a>
         </div>` : ''}
-
       ${data.guidance ? `
         <div style="border-top:1px solid var(--border);padding-top:16px;">
-          <div class="section-title" style="margin-bottom:10px;">🩺 Dr. MedAI Guidance</div>
+          <div class="section-title" style="margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            ${icon('stethoscope', 14)} Dr. MedAI Guidance
+          </div>
           <div style="font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap;">${data.guidance}</div>
         </div>` : ''}
-
-      <div style="margin-top:16px;padding:10px;background:color-mix(in srgb,var(--warning) 8%,transparent);border-radius:8px;font-size:11px;color:var(--text-muted);">
-        ⚠️ This is a screening tool, not a medical diagnosis. Always consult a healthcare professional.
+      <div style="margin-top:16px;padding:10px;background:color-mix(in srgb,var(--warning) 8%,transparent);border-radius:8px;font-size:11px;color:var(--text-muted);display:flex;align-items:flex-start;gap:6px;">
+        ${icon('alert-triangle', 13)} This is a screening tool, not a medical diagnosis. Always consult a healthcare professional.
       </div>
     </div>`;
-
   document.getElementById('result-container').scrollIntoView({ behavior: 'smooth' });
 }

@@ -1,0 +1,10 @@
+venv/
+blood_cancer_dataset/
+__pycache__/
+*.pyc
+.history/
+# model files are volume-mounted at runtime
+*.pt
+run_ml_models/
+runs/
+test.py

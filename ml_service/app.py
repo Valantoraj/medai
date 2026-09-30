@@ -11,8 +11,14 @@ from flask_cors import CORS
 from routes.tabular_routes import tabular_bp
 from routes.image_routes import image_bp
 
+import os
+
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:8080"])
+
+# In production ALLOWED_ORIGIN is set via environment variable to your domain.
+# Locally it falls back to Spring Boot on 8080.
+_allowed_origin = os.environ.get("ALLOWED_ORIGIN", "http://localhost:8080")
+CORS(app, origins=[_allowed_origin])
 
 # Register route blueprints
 app.register_blueprint(tabular_bp)

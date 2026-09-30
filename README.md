@@ -1,182 +1,190 @@
-# MedAI — AI-Powered Smart Healthcare Platform
+# MedAI — AI-Powered Healthcare Platform
 
-A unified healthcare web application built on **Spring Boot 3** (Java) with a **Vanilla HTML/CSS/JS** frontend and a **Python Flask ML microservice**. All AI runs locally via **Ollama** — no cloud APIs, no data leaves your server.
-
----
+A full-stack medical AI application combining disease risk prediction, cancer image diagnosis, and LLM-powered chatbots — running entirely on your own machine with no external API calls.
 
 ## Features
 
-| Feature | Model | Notes |
-|---|---|---|
-| Mental Health Chatbot | `medllama2` | Cross-session memory, crisis detection |
-| Common Disease Diagnoser | `medllama2` | Confidence scoring, OTC suggestions |
-| Complex Disease Diagnoser | `meditron` | 85% threshold, hospital finder trigger |
-| Medicine Information | `qwen3.5:latest` | Conversational + single-ask modes |
-| Post-Prediction Guidance | `qwen3.5:latest` | After every ML prediction |
-| Personalisation Engine | `nomic-embed-text` | pgvector semantic retrieval |
-| Hospital Finder | OpenStreetMap/Overpass | Live GPS, Leaflet routing |
-| Heart Disease Prediction | Stacked Ensemble | Juan12Dev/heart-risk-ai-v4 |
-| Stroke Prediction | Random Forest | emlacodeuse/ml-stroke-prediction |
-| Diabetes Prediction | Ensemble | shabari-vignesh8/Diabetes-prediction |
-| Lung Cancer (tabular) | XGBoost | nateraw/lung-cancer dataset |
-| Kidney Stone | Random Forest | Euniceyeee dataset |
-| Liver Disease | XGBoost | Francesco/liver-disease |
-| Lung Cancer CT | Transformer | jawbra/lungevaty |
-| Skin Cancer | EfficientNetV2S | Miguel764/efficientnetv2s-skin |
-| Blood/Leukemia | ResNet50/YOLO | LeukemiaAttri MICCAI 2024 |
-| Kidney CT | RenalCLIP (VLM) | taoyh/RenalCLIP |
-| Brain Tumor MRI | ResNet50 | Abuzaid01/brain-tumor-resnet50 |
-
----
-
-## Tech Stack
-
-- **Backend**: Java 17, Spring Boot 3.3.4, Spring AI 1.0.0-M6, Spring Security (JWT), Spring Data JPA, WebSocket/SSE
-- **Database**: PostgreSQL + pgvector extension
-- **Migrations**: Flyway
-- **AI**: Ollama (local, port 11434)
-- **ML Service**: Python 3.10+, Flask, scikit-learn, XGBoost, PyTorch, HuggingFace Transformers
-- **Frontend**: HTML5 + Vanilla CSS + Vanilla JS, Leaflet.js, OpenStreetMap
-- **Build**: Maven
-
----
+- **6 Chatbots** — Mental health, common disease, complex disease, medicine info (powered by Ollama)
+- **6 Tabular risk models** — Heart, stroke, diabetes, lung, kidney, liver (NHANES YOLO ensemble)
+- **6 Cancer image models** — Brain, liver, blood, lung, kidney, skin (YOLO detection)
+- **Hospital finder** — Live map using OpenStreetMap + GPS
+- **Dashboard** — Prediction history, chat sessions, activity log
+- **Personalisation** — Vector-search memory across sessions
 
 ## Prerequisites
 
-1. Java 17+
-2. Maven 3.8+
-3. PostgreSQL 15+ with `pgvector` extension
-4. Ollama installed and running (`http://localhost:11434`)
-5. Python 3.10+ with pip
+Install these on your machine before starting:
 
----
+| Tool | Version | Download |
+|------|---------|----------|
+| Java JDK | 17 | https://adoptium.net |
+| Maven | 3.6+ | https://maven.apache.org |
+| Python | 3.10+ | https://python.org |
+| PostgreSQL | 14+ | https://postgresql.org |
+| Ollama | latest | https://ollama.com |
 
-## Server Setup
+## Step 1 — Get the model weights
 
-### 1. PostgreSQL
+The trained model files are not in this repository (too large for GitHub).
+Download them and place them in the correct paths:
 
-```sql
-CREATE DATABASE medai;
-CREATE USER medai WITH PASSWORD 'medai_password';
-GRANT ALL PRIVILEGES ON DATABASE medai TO medai;
-\c medai
-CREATE EXTENSION IF NOT EXISTS vector;
+**Cancer image models** — place in `ml_service/`
+```
+ml_service/
+├── lung_cancer_model.pt
+├── blood_cancer_model.pt
+├── kidney_cancer_cyst_stone_model.pt
+├── skin_cancer_model.pt
+├── runs/
+│   ├── detect/runs/detect/brain_tumor_yolo/weights/best.pt
+│   └── liver_cancer_detect_v2/liver_cancer_yolo_fold0/weights/best.pt
 ```
 
-### 2. Ollama — pull required models
+**Tabular models** — place in `ml_service/run_ml_models/`
+```
+ml_service/run_ml_models/
+├── heart_disease_model.joblib
+├── stroke_model.joblib
+├── diabetes_screening_model.joblib
+├── lung_disease_model.joblib
+├── kidney_ckd_selfreport_model.joblib
+└── liver_disease_model.joblib
+```
+
+> You can retrain the tabular models with: `python ml_service/train_ml_models.py --task all`
+> You can retrain the image models by running the respective `train_*.py` scripts.
+
+## Step 2 — Set up PostgreSQL
 
 ```bash
-ollama pull medllama2
-ollama pull meditron
-# Already installed (verify):
-# ollama pull qwen3.5:latest
-# ollama pull llama3.1:8b
-# ollama pull nomic-embed-text:latest
+# Create the database and user
+psql -U postgres -c "CREATE USER medai WITH PASSWORD 'medai_password';"
+psql -U postgres -c "CREATE DATABASE medai OWNER medai;"
+psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;" -d medai
 ```
 
-### 3. Python ML Service
+## Step 3 — Pull Ollama models
+
+```bash
+ollama pull qwen3-coder          # main LLM (~18 GB, use llama3.2:3b for lower RAM)
+ollama pull nomic-embed-text     # embeddings for personalisation
+```
+
+If you have limited RAM (< 16 GB), use a smaller model instead:
+```bash
+ollama pull llama3.2:3b
+```
+Then open `src/main/resources/application.yml` and change every `qwen3-coder` to `llama3.2:3b`.
+
+## Step 4 — Set up the ML service
 
 ```bash
 cd ml_service
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
+```
 
-# Download pretrained tabular models from HuggingFace:
-python train/download_models.py
+## Step 5 — Start the ML service
 
-# Train the 3 models that need local training (~5 min total):
-python train/train_lung_tabular.py
-python train/train_kidney_tabular.py
-python train/train_liver.py
-
-# Start ML service (port 5001):
+```bash
+cd ml_service
+source venv/bin/activate
 python app.py
 ```
 
-### 4. Spring Boot Application
+The Flask service starts on `http://localhost:5001`. Leave this running.
+
+## Step 6 — Start the Spring Boot backend
+
+Open a new terminal:
 
 ```bash
-# From project root:
-mvn clean package -DskipTests
-java -jar target/medai-1.0.0.jar
-
-# Or with Maven:
+cd /path/to/this/repo
 mvn spring-boot:run
 ```
 
-Open **http://localhost:8080** in your browser.
+The app starts on `http://localhost:8080`. Open that URL in your browser.
+
+---
+
+## Docker (alternative to steps 4–6)
+
+If you have Docker installed, you can run everything except Ollama with:
+
+```bash
+cp .env.example .env
+# Edit .env with your values (DB password, JWT secret, etc.)
+docker compose up -d
+```
+
+Then pull Ollama models separately (Ollama runs on your host, not in Docker):
+```bash
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text
+```
 
 ---
 
 ## Configuration
 
-Edit `src/main/resources/application.yml`:
+All configuration is in `src/main/resources/application.yml`.
+Sensitive values (DB password, JWT secret) can be set via environment variables — see `.env.example`.
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/medai
-    username: medai
-    password: medai_password
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPRING_DATASOURCE_PASSWORD` | `medai_password` | PostgreSQL password |
+| `APP_JWT_SECRET` | (hardcoded dev key) | JWT signing secret — **change for production** |
+| `SPRING_AI_OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `APP_ML_SERVICE_BASE_URL` | `http://localhost:5001` | Flask ML service URL |
+| `OLLAMA_MODEL_CHAT` | `qwen3-coder` | LLM model for all chatbots |
+| `ALLOWED_ORIGIN` | `http://localhost:8080` | CORS allowed origin |
 
-app:
-  jwt:
-    secret: <your-256-bit-base64-secret>
-    expiration: 86400000   # 24 hours
+---
 
-  ollama:
-    models:
-      mental-health: medllama2
-      common-disease: medllama2
-      complex-disease: meditron
-      medicine: qwen3.5:latest
-      guidance: qwen3.5:latest
-      embedding: nomic-embed-text:latest
-      fallback: llama3.1:8b
+## Project Structure
 
-  ml-service:
-    base-url: http://localhost:5001
+```
+medai/
+├── src/main/java/com/medai/       # Spring Boot backend
+│   ├── controller/                # REST API endpoints
+│   ├── service/                   # Business logic + Ollama integration
+│   ├── model/                     # JPA entities
+│   ├── repository/                # Spring Data repositories
+│   ├── config/                    # Security, CORS, WebSocket config
+│   └── dto/                       # Request/response DTOs
+├── src/main/resources/
+│   ├── application.yml            # All configuration
+│   ├── db/migration/              # Flyway SQL migrations (auto-run on startup)
+│   └── static/                    # Frontend (HTML + CSS + JS)
+├── ml_service/
+│   ├── app.py                     # Flask entry point
+│   ├── routes/                    # Image and tabular prediction routes
+│   ├── predictors/
+│   │   ├── image/                 # YOLO cancer predictors
+│   │   └── tabular/               # NHANES ensemble predictors
+│   └── requirements.txt
+├── Dockerfile.spring              # Docker image for Spring Boot
+├── ml_service/Dockerfile.ml       # Docker image for ML service
+├── docker-compose.yml             # Runs all services together
+└── .env.example                   # Environment variable template
 ```
 
----
+## Tech Stack
 
-## API Overview
+| Layer | Technology |
+|-------|-----------|
+| Backend | Spring Boot 3, Spring Security (JWT), Spring AI, WebFlux |
+| Database | PostgreSQL 16, Flyway migrations, pgvector |
+| ML Service | Flask, Ultralytics YOLO, scikit-learn, LightGBM, XGBoost, CatBoost |
+| LLM | Ollama (local, no cloud) |
+| Frontend | Vanilla HTML/CSS/JS, Leaflet maps, Lucide icons |
+| Deployment | Docker Compose, Caddy (HTTPS) |
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login, sets JWT cookie |
-| POST | `/api/chat/mental-health` | Mental health chatbot |
-| POST | `/api/chat/common-disease` | Common disease diagnoser |
-| POST | `/api/chat/complex-disease` | Complex disease diagnoser |
-| POST | `/api/medicine/chat` | Medicine info (conversational) |
-| POST | `/api/medicine/query` | Medicine info (single-ask) |
-| GET | `/api/hospitals/nearby` | `?lat=X&lon=Y&radius=5000` |
-| POST | `/api/predict/heart` | Heart disease risk |
-| POST | `/api/predict/stroke` | Stroke risk |
-| POST | `/api/predict/diabetes` | Diabetes risk |
-| POST | `/api/predict/lung-tabular` | Lung cancer risk factors |
-| POST | `/api/predict/kidney-tabular` | Kidney stone risk |
-| POST | `/api/predict/liver` | Liver disease risk |
-| POST | `/api/predict/image/lung` | Lung CT scan |
-| POST | `/api/predict/image/skin` | Skin dermoscopy |
-| POST | `/api/predict/image/blood` | Blood smear leukemia |
-| POST | `/api/predict/image/kidney` | Kidney CT scan |
-| POST | `/api/predict/image/brain` | Brain MRI tumor |
-| PUT | `/api/personalisation/toggle` | Toggle personalisation on/off |
-| GET | `/api/predict/history` | Past predictions |
+## Notes
 
----
-
-## Running Tests
-
-```bash
-mvn test
-```
-
-Tests use H2 in-memory database — no PostgreSQL needed for testing.
-
----
-
-## ⚠️ Disclaimer
-
-MedAI is a **screening and informational tool only**. It is **not a substitute for professional medical advice, diagnosis, or treatment**. Always consult a qualified healthcare professional for medical decisions.
+- All AI runs locally via Ollama — no data leaves your machine
+- The `⚠️ WARNING` regex in `medicine.js` is intentional — it formats LLM warning text
+- Model weights are not included — download or train them separately
+- For production deployment, see `docs/deploy-guide.txt`

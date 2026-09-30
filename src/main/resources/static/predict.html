@@ -13,12 +13,15 @@
     .disease-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; transition:all 0.15s; border:1px solid transparent; margin-bottom:4px; }
     .disease-item:hover { background:var(--bg-hover); border-color:var(--border); }
     .disease-item.active { background:color-mix(in srgb,var(--accent) 10%,transparent); border-color:var(--accent); }
-    .disease-icon { font-size:20px; width:36px; height:36px; background:var(--bg-card); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .disease-icon { width:36px; height:36px; background:var(--bg-card); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .predict-main { padding:24px; overflow-y:auto; }
     .predict-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .result-card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-top:24px; animation:fadeIn 0.3s ease-out; }
     .risk-meter { width:100%; height:12px; background:var(--bg-hover); border-radius:8px; overflow:hidden; margin:12px 0; }
     .risk-fill { height:100%; border-radius:8px; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
+    .input-group { border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:12px; background:var(--bg-card); }
+    .input-group summary { cursor:pointer; font-weight:600; font-size:14px; padding:4px 0 10px; }
+    .input-grid { gap:0 16px; }
   </style>
 </head>
 <body>
@@ -29,19 +32,18 @@
     <span class="gradient-text">MedAI</span>
   </a>
   <div class="navbar-links">
-    <a class="nav-link" href="/chat.html">🤖 Chatbots</a>
-    <a class="nav-link" href="/medicine.html">💊 Medicine</a>
-    <a class="nav-link active" href="/predict.html">📊 Predict</a>
-    <a class="nav-link" href="/predict-image.html">🔬 Scan</a>
-    <a class="nav-link" href="/hospitals.html">🏥 Hospitals</a>
-    <a class="nav-link" href="/dashboard.html">📈 Dashboard</a>
-  </div>
+    <a class="nav-link" href="/dashboard.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Dashboard</a>
+    <a class="nav-link" href="/chat.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> Chatbots</a>
+    <a class="nav-link" href="/medicine.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg> Medicine</a>
+    <a class="nav-link active" href="/predict.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> Predict</a>
+    <a class="nav-link" href="/predict-image.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></svg> Scan</a>
+    <a class="nav-link" href="/hospitals.html" style="display:inline-flex;align-items:center;gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v4"/><path d="M14 14h-4"/><path d="M14 18h-4"/><path d="M14 8h-4"/><path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"/><path d="M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"/></svg> Hospitals</a>  </div>
   <div class="navbar-right">
     <button class="personalisation-toggle" id="personalisation-toggle">
       <span class="dot"></span><span class="toggle-label">General</span>
     </button>
     <button class="btn btn-ghost btn-sm" id="logout-btn">Sign Out</button>
-    <button class="btn btn-ghost btn-icon" id="theme-toggle">☀️</button>
+    <button class="btn btn-ghost btn-icon" id="theme-toggle"></button>
   </div>
 </nav>
 
@@ -51,28 +53,28 @@
     <div class="section-title" style="padding:0 8px;margin-bottom:12px;">Disease Assessment</div>
     <div id="disease-nav">
       <div class="disease-item active" data-disease="heart" onclick="selectDisease('heart')">
-        <div class="disease-icon">❤️</div>
-        <div><div style="font-size:12px;font-weight:600;">Heart Disease</div><div style="font-size:10px;color:var(--text-muted);">13 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Heart Disease</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
       <div class="disease-item" data-disease="stroke" onclick="selectDisease('stroke')">
-        <div class="disease-icon">🧠</div>
-        <div><div style="font-size:12px;font-weight:600;">Stroke</div><div style="font-size:10px;color:var(--text-muted);">10 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Stroke</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
       <div class="disease-item" data-disease="diabetes" onclick="selectDisease('diabetes')">
-        <div class="disease-icon">🩸</div>
-        <div><div style="font-size:12px;font-weight:600;">Diabetes</div><div style="font-size:10px;color:var(--text-muted);">8 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Diabetes</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
       <div class="disease-item" data-disease="lung-tabular" onclick="selectDisease('lung-tabular')">
-        <div class="disease-icon">🫁</div>
-        <div><div style="font-size:12px;font-weight:600;">Lung Cancer Risk</div><div style="font-size:10px;color:var(--text-muted);">15 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Lung Disease (COPD)</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
       <div class="disease-item" data-disease="kidney-tabular" onclick="selectDisease('kidney-tabular')">
-        <div class="disease-icon">🫘</div>
-        <div><div style="font-size:12px;font-weight:600;">Kidney Stone</div><div style="font-size:10px;color:var(--text-muted);">6 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Chronic Kidney Disease</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
       <div class="disease-item" data-disease="liver" onclick="selectDisease('liver')">
-        <div class="disease-icon">🟤</div>
-        <div><div style="font-size:12px;font-weight:600;">Liver Disease</div><div style="font-size:10px;color:var(--text-muted);">10 parameters</div></div>
+        <div class="disease-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+        <div><div style="font-size:12px;font-weight:600;">Liver Disease</div><div style="font-size:10px;color:var(--text-muted);">NHANES model</div></div>
       </div>
     </div>
   </aside>
@@ -85,6 +87,7 @@
 </div>
 
 <div id="toast-container"></div>
+<script src="/js/icons.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/predict.js"></script>
 </body>

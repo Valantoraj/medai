@@ -62,7 +62,7 @@ async function sendMessage() {
     if (medicineMode === 'single') {
       const res = await api('POST', '/api/medicine/query', { question: msg });
       if (res?.ok) answer = res.data.answer;
-      else answer = '⚠️ Could not get an answer. Please try again.';
+      else answer = `${icon('alert-triangle', 14)} Could not get an answer. Please try again.`;
     } else {
       const res = await api('POST', '/api/medicine/chat', {
         message: msg,
@@ -74,7 +74,7 @@ async function sendMessage() {
         answer = res.data.message;
         medicineSessionId = res.data.sessionId;
       } else {
-        answer = '⚠️ Error contacting medicine assistant.';
+        answer = `${icon('alert-triangle', 14)} Error contacting medicine assistant.`;
       }
     }
 
@@ -82,7 +82,7 @@ async function sendMessage() {
     appendBubble('assistant', answer);
   } catch (e) {
     removeTyping(typingId);
-    appendBubble('assistant', '⚠️ Connection error. Is the server running?');
+    appendBubble('assistant', `${icon('alert-triangle', 14)} Connection error. Is the server running?`);
   } finally {
     isBusy = false;
     document.getElementById('send-btn').disabled = false;
@@ -97,7 +97,7 @@ function appendBubble(role, content) {
 
   const avatar = document.createElement('div');
   avatar.className = 'bubble-avatar';
-  avatar.textContent = role === 'user' ? '👤' : '💊';
+  avatar.innerHTML = role === 'user' ? icon('user', 18) : icon('pill', 18);
 
   const bubble = document.createElement('div');
   bubble.className = `bubble bubble-${role}`;
@@ -125,7 +125,7 @@ function showTyping() {
   const row = document.createElement('div');
   row.className = 'bubble-row assistant';
   row.id = id;
-  row.innerHTML = `<div class="bubble-avatar">💊</div><div class="bubble-typing"><div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+  row.innerHTML = `<div class="bubble-avatar">${icon('pill', 18)}</div><div class="bubble-typing"><div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
   container.appendChild(row);
   container.scrollTop = container.scrollHeight;
   return id;
@@ -137,9 +137,8 @@ function removeTyping(id) {
 }
 
 function formatMedicineMessage(text) {
-  // Highlight warnings
   return text
-    .replace(/⚠️ WARNING(.*?)(\n|$)/g, '<div style="background:color-mix(in srgb,var(--warning) 12%,transparent);border-left:3px solid var(--warning);padding:6px 10px;margin:6px 0;border-radius:4px;font-size:12px;">⚠️ WARNING$1</div>')
+    .replace(/⚠️ WARNING(.*?)(\n|$)/g, `<div style="background:color-mix(in srgb,var(--warning) 12%,transparent);border-left:3px solid var(--warning);padding:6px 10px;margin:6px 0;border-radius:4px;font-size:12px;display:flex;align-items:flex-start;gap:6px;">${icon('alert-triangle', 13)} <span>WARNING$1</span></div>`)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');

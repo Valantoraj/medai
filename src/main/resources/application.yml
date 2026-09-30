@@ -7,7 +7,7 @@ spring:
 
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         options:
           temperature: 0.7
@@ -17,13 +17,13 @@ spring:
           model: nomic-embed-text:latest
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/medai
-    username: medai
-    password: medai_password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/medai}
+    username: ${SPRING_DATASOURCE_USERNAME:medai}
+    password: ${SPRING_DATASOURCE_PASSWORD:medai_password}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 5
+      minimum-idle: 1
       connection-timeout: 30000
 
   jpa:
@@ -50,7 +50,10 @@ spring:
     resources:
       static-locations: classpath:/static/
       cache:
-        period: 3600
+        period: 86400
+        cachecontrol:
+          max-age: 86400
+          must-revalidate: true
 
 server:
   port: 8080
@@ -60,18 +63,18 @@ server:
 
 app:
   jwt:
-    secret: 4d6e7a3b9f2c1e8a5d0f7b4c2e9a6d3f1b8e5c2a9f7d4b1e8c5a2f9d6b3e0a7
-    expiration: 86400000
+    secret: ${APP_JWT_SECRET:4d6e7a3b9f2c1e8a5d0f7b4c2e9a6d3f1b8e5c2a9f7d4b1e8c5a2f9d6b3e0a7}
+    expiration: ${APP_JWT_EXPIRATION:86400000}
 
   ollama:
     models:
-      mental-health: medllama2
-      common-disease: medllama2
-      complex-disease: meditron
-      medicine: llama3.1:8b
+      mental-health: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      common-disease: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      complex-disease: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      medicine: ${OLLAMA_MODEL_CHAT:qwen3-coder}
       embedding: nomic-embed-text:latest
-      fallback: llama3.1:8b
-      guidance: llama3.1:8b
+      fallback: ${OLLAMA_MODEL_CHAT:qwen3-coder}
+      guidance: ${OLLAMA_MODEL_CHAT:qwen3-coder}
 
   confidence:
     threshold-common: 80
@@ -79,7 +82,7 @@ app:
     threshold-mental: 80
 
   ml-service:
-    base-url: http://localhost:5001
+    base-url: ${APP_ML_SERVICE_BASE_URL:http://localhost:5001}
 
 logging:
   level:

@@ -88,6 +88,13 @@ public class PredictionController {
         return imagePredict(user, "/predict/image/lung", "Lung Cancer", "CT Scan", image);
     }
 
+    @PostMapping(value = "/image/liver", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PredictionResponse> predictLiverImage(
+            @AuthenticationPrincipal User user,
+            @RequestParam("image") MultipartFile image) {
+        return imagePredict(user, "/predict/image/liver", "Liver Cancer", "CT Scan", image);
+    }
+
     @PostMapping(value = "/image/skin", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PredictionResponse> predictSkinImage(
             @AuthenticationPrincipal User user,
@@ -197,6 +204,8 @@ public class PredictionController {
             boolean aboveThreshold = mlResult.path("above_threshold").asBoolean(false);
             String modelUsed = mlResult.path("model_used").asText("");
             String severity = mlResult.path("severity").asText("MEDIUM");
+            String annotatedImageB64 = mlResult.path("annotated_image_b64").asText(null);
+            if (annotatedImageB64 != null && annotatedImageB64.isBlank()) annotatedImageB64 = null;
 
             String patientContext = Boolean.TRUE.equals(user.getPersonalisation())
                     ? personalisationService.buildPersonalisationContext(user.getId(), cancerType)
@@ -228,6 +237,7 @@ public class PredictionController {
                     .hospitalSpecialtyFilter(specialty)
                     .personalised(!patientContext.isBlank())
                     .interactionLogged(true)
+                    .annotatedImageB64(annotatedImageB64)
                     .build());
 
         } catch (Exception e) {

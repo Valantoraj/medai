@@ -1,20 +1,45 @@
-flask==3.0.3
-flask-cors==4.0.1
-scikit-learn==1.5.2
-xgboost==2.1.1
-lightgbm==4.5.0
-joblib==1.4.2
-numpy==1.26.4
-pandas==2.2.3
-tensorflow==2.17.0
-torch==2.4.1
-torchvision==0.19.1
-transformers==4.44.2
-huggingface_hub==0.25.0
-pillow==10.4.0
-opencv-python==4.10.0.84
-datasets==3.0.1
-imbalanced-learn==0.12.3
-catboost==1.2.7
+# MedAI ML Service dependencies
+# torch and torchvision are installed separately in Dockerfile.ml
+# using the CPU-only wheel to keep image size small.
+
+Flask==3.0.3
+Flask-Cors==4.0.1
 Werkzeug==3.0.4
+click==8.5.0
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+
+# YOLO inference
+ultralytics==8.4.163
+ultralytics-thop==2.1.6
+pillow==12.3.0
+opencv-python-headless==5.0.0.93
+numpy==2.5.3
+PyYAML==6.0.3
+tqdm==4.70.1
+psutil==7.2.2
+seaborn==0.13.2
+matplotlib==3.11.2
+
+# Tabular model inference
+scikit-learn==1.5.2
+joblib==1.4.2
+lightgbm==4.5.0
+xgboost==2.1.1
+catboost==1.2.10
+pandas==2.2.3
+scipy==1.18.1
+
+# Shared utilities
 requests==2.32.3
+certifi==2026.7.22
+charset-normalizer==3.5.1
+idna==3.20
+urllib3==2.8.0
+packaging==26.3
+filelock==4.0.4
+fsspec==2026.6.0
+typing_extensions==4.16.0
+threadpoolctl==3.7.0
+setuptools==84.0.0
