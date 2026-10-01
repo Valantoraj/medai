@@ -86,6 +86,14 @@ body {
   line-height: 1.6;
   transition: background 0.2s, color 0.2s;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent text size adjustment on mobile */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Scrollbars ── */
@@ -164,3 +172,23 @@ a:hover { text-decoration: underline; }
 
 .fade-in  { animation: fadeIn 0.25s ease-out; }
 .animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+
+/* ── Mobile touch targets ── */
+@media (max-width: 768px) {
+  /* Ensure touch targets are at least 44x44px (Apple HIG) */
+  button, a, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better tap highlighting */
+  * {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Prevent double-tap zoom */
+  a, button {
+    touch-action: manipulation;
+  }
+}
