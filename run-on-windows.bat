@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 title MedAI
 color 0B
 cd /d "%~dp0"
@@ -14,47 +15,57 @@ echo.
 docker info >nul 2>&1
 if %errorLevel% neq 0 (
     echo [ERROR] Docker Desktop is not running.
-    echo Please start Docker Desktop and wait for it to fully load,
+    echo Please start Docker Desktop, wait for it to fully load,
     echo then re-run this file.
     pause
     exit /b 1
 )
+echo [OK] Docker is running.
 
-:: ── Check Ollama is running (native Windows install) ─────────
+:: ── Check Ollama is running ───────────────────────────────────
 ollama list >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [INFO] Ollama not running. Starting it...
+    echo [INFO] Ollama not responding. Starting it...
     start "" ollama serve
-    timeout /t 5 /nobreak >nul
+    timeout /t 6 /nobreak >nul
 )
+echo [OK] Ollama is running.
+echo.
 
 :: ── Pull Ollama models if not present ────────────────────────
-ollama list 2>nul | findstr "llama3.2" >nul
+echo [INFO] Checking Ollama models...
+ollama list > "%TEMP%\ollama_models.txt" 2>nul
+
+findstr /i "llama3.2" "%TEMP%\ollama_models.txt" >nul 2>&1
 if %errorLevel% neq 0 (
     echo [INFO] Pulling llama3.2:3b model (~2GB, one-time download)...
     ollama pull llama3.2:3b
+) else (
+    echo [OK] llama3.2:3b already present.
 )
 
-ollama list 2>nul | findstr "nomic-embed" >nul
+findstr /i "nomic-embed" "%TEMP%\ollama_models.txt" >nul 2>&1
 if %errorLevel% neq 0 (
     echo [INFO] Pulling nomic-embed-text (~274MB, one-time download)...
     ollama pull nomic-embed-text
+) else (
+    echo [OK] nomic-embed-text already present.
 )
 
-echo [OK] Ollama models ready.
+del "%TEMP%\ollama_models.txt" >nul 2>&1
 echo.
 
 :: ── Pull latest Docker images ─────────────────────────────────
 echo [INFO] Pulling latest images from Docker Hub...
 docker pull valantorajg/medai-app:latest
 docker pull valantorajg/medai-ml:latest
-
 echo.
+
 :: ── Start containers ─────────────────────────────────────────
 echo [INFO] Starting all services...
 docker compose -f docker-compose.hub.yml up -d
-
 echo.
+
 echo ============================================================
 echo   MedAI is starting up!
 echo   Opening browser in 35 seconds...
