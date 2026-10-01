@@ -71,6 +71,9 @@ async function api(method, path, body = null, isFormData = false) {
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (body && !isFormData) headers['Content-Type'] = 'application/json';
+  
+  // Add ngrok header to bypass browser warning when using ngrok tunnels
+  headers['ngrok-skip-browser-warning'] = 'true';
 
   const opts = { method, headers, credentials: 'include' };
   if (body) opts.body = isFormData ? body : JSON.stringify(body);
