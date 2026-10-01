@@ -1,12 +1,7 @@
 FROM python:3.13
 WORKDIR /app
 
-# python:3.13 (full image) already ships libgl, libglib, libSM, libXext, libgomp.
-# No apt-get needed — avoids Debian mirror issues on restricted networks.
-# Using Python 3.13 so requirements.txt pins match exactly (no version conflicts).
-
 # Install CPU-only PyTorch (latest available for Python 3.13)
-# Let pip resolve the correct torchvision version automatically
 RUN pip install --no-cache-dir \
     torch torchvision \
     --index-url https://download.pytorch.org/whl/cpu
@@ -14,6 +9,11 @@ RUN pip install --no-cache-dir \
 # Install all other dependencies using exact versions from requirements.txt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Force remove opencv-python if installed (ultralytics pulls it in)
+# and ensure only opencv-python-headless is present (no libGL needed)
+RUN pip uninstall -y opencv-python opencv-contrib-python || true && \
+    pip install --no-cache-dir --force-reinstall opencv-python-headless==5.0.0.93
 
 # Copy application code
 COPY app.py .

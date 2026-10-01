@@ -16,13 +16,14 @@ Install both, then restart your computer.
 ```powershell
 cd D:\medai-new
 git pull
-.\run-on-windows.ps1
+powershell -ExecutionPolicy Bypass -File .\run-on-windows.ps1
 ```
 
-**First time only:** You may need to enable script execution:
+**Alternative if you get "execution policy" errors:**
 ```powershell
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass
 ```
+Then run `.\run-on-windows.ps1` normally
 
 ### Method 2: Command Prompt / Double-click
 
@@ -74,10 +75,19 @@ in a separate terminal.
 Start Docker Desktop and wait until the whale icon stops animating in the taskbar.
 
 ### Script execution policy error (PowerShell only)
-Run PowerShell as Administrator and execute:
+Your system requires signed scripts. Use one of these solutions:
+
+**Option 1 (easiest):** Bypass for this one script:
 ```powershell
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+powershell -ExecutionPolicy Bypass -File .\run-on-windows.ps1
 ```
+
+**Option 2:** Change policy permanently (requires Administrator):
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass
+```
+
+**Option 3:** Just use the .bat file instead (double-click from File Explorer)
 
 ---
 
