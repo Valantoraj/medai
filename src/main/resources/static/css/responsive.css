@@ -1,119 +1,259 @@
 /* ============================================================
    MedAI — responsive.css
-   Mobile-first breakpoints
+   Comprehensive mobile-first responsive design
    ============================================================ */
+
+/* ── Base mobile-first rules ── */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal overflow globally */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  position: relative;
+}
+
+/* Ensure all containers respect viewport width */
+.container, .card, .card-flat, .feature-card {
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
 
 /* ── Tablet (≤1024px) ── */
 @media (max-width: 1024px) {
+  .container {
+    padding: 0 20px;
+  }
+  
+  /* Chat layout */
   .chat-layout {
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 200px 1fr !important;
   }
+  
   .confidence-sidebar {
-    display: none;
+    display: none !important;
   }
+  
+  /* Map layout */
   .map-layout {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px 1fr !important;
   }
+  
+  /* Predict grid */
   .predict-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr !important;
   }
+  
+  /* Feature grid */
   .feature-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Predict layout */
+  .predict-layout {
+    grid-template-columns: 220px 1fr !important;
+  }
+  
+  /* Image predict layout */
+  .image-predict-layout {
+    grid-template-columns: 220px 1fr !important;
   }
 }
 
 /* ── Mobile (≤768px) ── */
 @media (max-width: 768px) {
-  /* Navbar mobile adjustments */
+  /* ── Navbar mobile ── */
   .navbar {
-    padding: 0 12px;
+    padding: 0 12px !important;
     flex-wrap: nowrap;
+    height: 52px !important;
   }
   
   .navbar-brand {
-    font-size: 18px;
-    gap: 6px;
+    font-size: 16px !important;
+    gap: 6px !important;
   }
   
   .navbar-brand svg {
-    width: 18px;
-    height: 18px;
+    width: 18px !important;
+    height: 18px !important;
   }
   
   .navbar-brand span.version-badge {
-    display: none;
+    display: none !important;
   }
   
   .navbar-links { 
-    display: none; 
+    display: none !important;
   }
   
   .navbar-right {
-    gap: 6px;
+    gap: 6px !important;
   }
   
   .navbar-right .btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
   }
   
   .navbar-right .nav-link {
-    display: none;
+    display: none !important;
   }
   
   .personalisation-toggle {
-    padding: 4px 8px;
-    font-size: 11px;
+    padding: 4px 8px !important;
+    font-size: 10px !important;
   }
   
   .personalisation-toggle .toggle-label {
-    display: none;
+    display: none !important;
   }
   
-  .mobile-menu-btn { display: flex !important; }
+  .mobile-menu-btn { 
+    display: flex !important; 
+  }
 
+  /* ── Chat layout mobile ── */
   .chat-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-  .bot-sidebar {
-    display: none;
-  }
-  .bot-sidebar.open {
-    display: flex;
-    position: fixed;
-    inset: 56px 0 0 0;
-    z-index: 50;
-    width: 240px;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
-  }
-
-  .map-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-  }
-  .hospital-sidebar {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 50vh;
-    z-index: 50;
-    border-radius: 16px 16px 0 0;
-    border-top: 1px solid var(--border);
-    border-right: none;
-  }
-  .hospital-sidebar.open { display: flex; }
-
-  .predict-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    height: calc(100vh - 52px) !important;
   }
   
-  .feature-grid {
+  .bot-sidebar {
+    display: none !important;
+  }
+  
+  .bot-sidebar.open {
+    display: flex !important;
+    position: fixed !important;
+    inset: 52px 0 0 0 !important;
+    z-index: 50 !important;
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4) !important;
+  }
+  
+  .chat-main {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  .chat-messages {
+    padding: 12px !important;
+  }
+  
+  .bubble {
+    max-width: 90% !important;
+    font-size: 14px !important;
+  }
+  
+  .chat-input-area {
+    padding: 12px !important;
+  }
+  
+  .chat-textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+
+  /* ── Medicine layout mobile ── */
+  .medicine-layout {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+  
+  .medicine-history {
+    display: none !important;
+  }
+  
+  .medicine-history.open {
+    display: flex !important;
+    position: fixed !important;
+    top: 52px !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 280px !important;
+    z-index: 50 !important;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.4) !important;
+  }
+
+  /* ── Predict layout mobile ── */
+  .predict-layout {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+  
+  .predict-sidebar {
+    display: none !important;
+  }
+  
+  .predict-sidebar.open {
+    display: flex !important;
+    position: fixed !important;
+    inset: 52px 0 0 0 !important;
+    z-index: 50 !important;
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4) !important;
+  }
+  
+  .predict-main {
+    padding: 16px !important;
+    width: 100% !important;
+  }
+  
+  .predict-grid {
     grid-template-columns: 1fr !important;
   }
+
+  /* ── Image predict layout mobile ── */
+  .image-predict-layout {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
   
+  .scan-sidebar {
+    display: none !important;
+  }
+  
+  .scan-sidebar.open {
+    display: flex !important;
+    position: fixed !important;
+    inset: 52px 0 0 0 !important;
+    z-index: 50 !important;
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4) !important;
+  }
+  
+  .scan-main {
+    padding: 16px !important;
+  }
+
+  /* ── Hospital map mobile ── */
+  .map-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr !important;
+  }
+  
+  .hospital-sidebar {
+    display: none !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 50vh !important;
+    z-index: 50 !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-top: 1px solid var(--border) !important;
+    border-right: none !important;
+  }
+  
+  .hospital-sidebar.open { 
+    display: flex !important; 
+  }
+
+  /* ── Login/Register mobile ── */
   .auth-layout {
     grid-template-columns: 1fr !important;
   }
@@ -121,24 +261,66 @@
   .auth-hero { 
     display: none !important; 
   }
+  
+  .auth-form-container {
+    padding: 24px 20px !important;
+  }
+  
+  /* Fix register form grids */
+  .auth-form-container form > div[style*="grid-template-columns"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
 
+  /* ── Dashboard mobile ── */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  
+  .dashboard-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .prediction-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+  
+  .activity-item {
+    padding: 10px 0 !important;
+  }
+
+  /* ── Index page mobile ── */
+  .feature-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
   .hero-title { 
-    font-size: 32px !important; 
+    font-size: 28px !important; 
     line-height: 1.2 !important;
   }
   
   .hero-subtitle { 
     font-size: 15px !important; 
-    padding: 0 8px;
+    padding: 0 8px !important;
   }
 
+  /* ── Container adjustments ── */
   .container { 
-    padding: 0 16px; 
+    padding: 0 16px !important; 
   }
   
   /* Hero section mobile */
   section[style*="padding: 80px"] {
-    padding: 40px 16px 30px !important;
+    padding: 32px 16px 24px !important;
   }
   
   /* Feature cards mobile stacking */
@@ -151,52 +333,76 @@
     height: 40px !important;
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-  
-  .stats-row {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  .bubble { 
-    max-width: 88%; 
-  }
-
-  #theme-toggle { 
-    bottom: 20px; 
-    right: 16px; 
-  }
-  
-  /* Form inputs mobile */
-  input, select, textarea {
+  /* ── Forms mobile ── */
+  input, select, textarea, .form-input, .form-select {
     font-size: 16px !important; /* Prevents zoom on iOS */
   }
   
   /* Buttons mobile */
   .btn-lg {
-    padding: 10px 20px !important;
+    padding: 10px 18px !important;
     font-size: 14px !important;
   }
   
+  .btn {
+    padding: 7px 14px !important;
+    font-size: 12px !important;
+  }
+  
   /* Main content padding */
-  main.container {
+  main.container, main[class*="container"] {
     padding: 16px !important;
   }
-}
+  
+  /* Cards */
+  .card, .card-flat {
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+  
+  /* Result cards */
+  .result-card {
+    padding: 18px !important;
+  }
+  
+  body {
+    font-size: 13px !important;
+  }
+  
+  h1 {
+    font-size: 22px !important;
+  }
+  
+  h2 {
+    font-size: 18px !important;
+  }
+  
+  h3 {
+    font-size: 16px !important;
+  }
+  
+  #theme-toggle { 
+    bottom: 20px !important;
+    right: 16px !important;
+  }
 }
 
 /* ── Small mobile (≤480px) ── */
 @media (max-width: 480px) {
   .navbar {
-    height: 50px;
+    height: 48px !important;
+    padding: 0 10px !important;
   }
   
   .navbar-brand {
-    font-size: 16px;
+    font-size: 15px !important;
   }
   
   .personalisation-toggle {
+    display: none !important;
+  }
+  
+  .navbar-right #nav-username {
     display: none !important;
   }
   
@@ -209,7 +415,7 @@
   }
   
   .hero-title { 
-    font-size: 26px !important; 
+    font-size: 24px !important; 
   }
   
   .hero-subtitle {
@@ -217,25 +423,89 @@
   }
   
   .bubble { 
-    max-width: 94%; 
+    max-width: 95% !important;
+    font-size: 13px !important;
   }
   
   .btn {
-    padding: 7px 14px !important;
-    font-size: 12px !important;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
   }
   
   .card, .card-flat {
-    padding: 14px;
-    border-radius: 10px;
+    padding: 14px !important;
   }
   
   body {
-    font-size: 13px;
+    font-size: 12px !important;
+  }
+  
+  section[style*="padding"] {
+    padding: 24px 12px 20px !important;
+  }
+  
+  .chat-input-area {
+    padding: 10px !important;
+  }
+  
+  .chat-messages {
+    padding: 10px !important;
   }
 }
 
-/* ── Mobile menu btn (hidden on desktop) ── */
+/* ── Extra small (≤375px) ── */
+@media (max-width: 375px) {
+  .navbar {
+    height: 44px !important;
+  }
+  
+  .navbar-brand {
+    font-size: 14px !important;
+  }
+  
+  .navbar-brand svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  .hero-title {
+    font-size: 22px !important;
+  }
+  
+  .container {
+    padding: 0 12px !important;
+  }
+  
+  body {
+    font-size: 11px !important;
+  }
+}
+
+/* ── Landscape mobile (height ≤ 500px) ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .navbar {
+    height: 44px !important;
+  }
+  
+  .chat-layout {
+    height: calc(100vh - 44px) !important;
+  }
+  
+  .chat-messages {
+    padding: 8px !important;
+  }
+  
+  .chat-input-area {
+    padding: 8px !important;
+  }
+  
+  .bubble {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ── Mobile menu button (hidden on desktop) ── */
 .mobile-menu-btn {
   display: none;
   padding: 7px;
@@ -247,4 +517,27 @@
   font-size: 18px;
   align-items: center;
   justify-content: center;
+}
+
+/* ── Touch improvements ── */
+@media (max-width: 768px) {
+  /* Ensure touch targets are at least 44x44px */
+  button, a.btn, input[type="button"], input[type="submit"], .nav-link, .bot-item, .disease-item, .scan-item {
+    min-height: 44px;
+  }
+  
+  /* Better tap highlighting */
+  * {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Prevent double-tap zoom */
+  a, button {
+    touch-action: manipulation;
+  }
+  
+  /* Larger clickable areas */
+  .btn, .nav-link {
+    padding: 10px 14px !important;
+  }
 }
