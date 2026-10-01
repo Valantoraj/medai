@@ -13,35 +13,7 @@ A full-stack medical AI application combining disease risk prediction, cancer im
 
 ---
 
-## 🚀 Quick Start (Windows - No Build Required)
-
-**NEW! Pre-built Docker images available on Docker Hub**
-
-**Prerequisites (install these first):**
-1. **Docker Desktop** → https://www.docker.com/products/docker-desktop/
-2. **Ollama** → https://ollama.com/download
-
-**Get MedAI:**
-
-**With Git:**
-```powershell
-cd D:\
-git clone https://github.com/Valantoraj/medai.git medai
-cd medai
-powershell -ExecutionPolicy Bypass -File .\run-on-windows.ps1
-```
-
-**Without Git (Download ZIP):**
-1. Visit https://github.com/Valantoraj/medai
-2. Click green **Code** button → **Download ZIP**
-3. Extract to `D:\medai`
-4. Open `D:\medai` and **double-click `run-on-windows.bat`**
-
-📖 **Full Guide:** See [QUICK_START.md](QUICK_START.md) for detailed instructions and troubleshooting.
-
----
-
-## Alternative Setup Methods
+## Quick Start — Choose your method
 
 ### Method A: One-click batch file (Windows, native)
 

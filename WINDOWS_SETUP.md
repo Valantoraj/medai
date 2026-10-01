@@ -9,40 +9,26 @@ Install both, then restart your computer.
 
 ---
 
-## Getting MedAI (Choose ONE method)
+## Quick Start (Choose ONE method)
 
-### Method 1: Using Git (Best for updates)
-
-1. **Install Git for Windows:** https://git-scm.com/download/win
-
-2. **Clone the repository:**
-```powershell
-cd D:\
-git clone https://github.com/Valantoraj/medai.git medai
-cd medai
-```
-
-### Method 2: Download ZIP (No Git needed)
-
-1. **Download:** Visit https://github.com/Valantoraj/medai
-2. Click the green **Code** button → **Download ZIP**
-3. **Extract** the ZIP to `D:\medai` (right-click → Extract All)
-
----
-
-## Running MedAI (Choose ONE method)
-
-### Option A: PowerShell
+### Method 1: PowerShell (Recommended if you use PowerShell)
 
 ```powershell
-cd D:\medai
+cd D:\medai-new
+git pull
 powershell -ExecutionPolicy Bypass -File .\run-on-windows.ps1
 ```
 
-### Option B: Double-click (Easiest)
+**Alternative if you get "execution policy" errors:**
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass
+```
+Then run `.\run-on-windows.ps1` normally
+
+### Method 2: Command Prompt / Double-click
 
 1. Open File Explorer
-2. Navigate to `D:\medai`
+2. Navigate to `D:\medai-new`
 3. **Double-click `run-on-windows.bat`**
 
 ---
@@ -108,26 +94,9 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass
 ## Stopping MedAI
 
 ```cmd
-cd D:\medai
+cd D:\medai-new
 docker compose -f docker-compose.hub.yml down
 ```
-
----
-
-## Updating MedAI
-
-### If you used Git:
-```powershell
-cd D:\medai
-git pull
-docker compose -f docker-compose.hub.yml down
-powershell -ExecutionPolicy Bypass -File .\run-on-windows.ps1
-```
-
-### If you downloaded ZIP:
-1. Download the latest ZIP from GitHub
-2. Extract and replace the old files
-3. Run the script again
 
 ---
 
