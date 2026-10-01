@@ -65,7 +65,7 @@ services:
       # host.docker.internal resolves to the Windows host IP from inside Docker
       - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
       - APP_ML_SERVICE_BASE_URL=http://ml-service:5001
-      - APP_JWT_SECRET=change_this_to_a_random_64_char_string
+      - APP_JWT_SECRET=GL5hjzqQzyI/uL8VvFdcc9tfcS0avEkjOb99T4tWlW65izjG0vl/Ege5VgI6+OruK8JvLjq+q8yjGJK2Qo8Fbw==
       - APP_JWT_EXPIRATION=86400000
       - ALLOWED_ORIGIN=http://localhost:8090
     depends_on:
