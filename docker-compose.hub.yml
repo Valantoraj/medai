@@ -31,19 +31,14 @@ services:
       timeout: 5s
       retries: 5
 
-  ollama:
-    image: ollama/ollama:latest
-    restart: unless-stopped
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "127.0.0.1:11434:11434"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
+  # ── Ollama is NOT containerised here ──────────────────────
+  # Ollama is already installed natively on Windows and running on
+  # localhost:11434. Docker containers reach the Windows host via
+  # host.docker.internal. No Ollama container needed.
+  #
+  # Make sure these models are pulled on the Windows machine:
+  #   ollama pull llama3.2:3b
+  #   ollama pull nomic-embed-text
 
   ml-service:
     image: valantorajg/medai-ml:latest
@@ -69,7 +64,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/medai
       - SPRING_DATASOURCE_USERNAME=medai
       - SPRING_DATASOURCE_PASSWORD=medai_secure_2024
-      - SPRING_AI_OLLAMA_BASE_URL=http://ollama:11434
+      # host.docker.internal resolves to the Windows host IP from inside Docker
+      - SPRING_AI_OLLAMA_BASE_URL=http://host.docker.internal:11434
       - APP_ML_SERVICE_BASE_URL=http://ml-service:5001
       - APP_JWT_SECRET=change_this_to_a_random_64_char_string
       - APP_JWT_EXPIRATION=86400000
@@ -79,9 +75,6 @@ services:
         condition: service_healthy
       ml-service:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
 
 volumes:
   pgdata:
-  ollama_data:
