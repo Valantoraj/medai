@@ -25,34 +25,18 @@ echo [OK] Docker is running.
 :: ── Check Ollama is running ───────────────────────────────────
 ollama list >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [INFO] Ollama not responding. Starting it...
+    echo [INFO] Starting Ollama...
     start "" ollama serve
     timeout /t 6 /nobreak >nul
 )
 echo [OK] Ollama is running.
 echo.
 
-:: ── Pull Ollama models if not present ────────────────────────
-echo [INFO] Checking Ollama models...
-ollama list > "%TEMP%\ollama_models.txt" 2>nul
-
-findstr /i "llama3.2" "%TEMP%\ollama_models.txt" >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [INFO] Pulling llama3.2:3b model (~2GB, one-time download)...
-    ollama pull llama3.2:3b
-) else (
-    echo [OK] llama3.2:3b already present.
-)
-
-findstr /i "nomic-embed" "%TEMP%\ollama_models.txt" >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [INFO] Pulling nomic-embed-text (~274MB, one-time download)...
-    ollama pull nomic-embed-text
-) else (
-    echo [OK] nomic-embed-text already present.
-)
-
-del "%TEMP%\ollama_models.txt" >nul 2>&1
+:: ── Pull Ollama models (always attempt, ollama skips if present) ─
+echo [INFO] Ensuring Ollama models are available...
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text
+echo [OK] Ollama models ready.
 echo.
 
 :: ── Pull latest Docker images ─────────────────────────────────
