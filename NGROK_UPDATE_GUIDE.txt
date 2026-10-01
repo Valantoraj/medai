@@ -1,0 +1,71 @@
+═══════════════════════════════════════════════════════════════
+  MedAI NGROK FIX - 400 Error Resolved
+═══════════════════════════════════════════════════════════════
+
+✅ FIXED: Added ngrok-skip-browser-warning header to all API calls
+✅ DEPLOYED: Updated Docker image on Docker Hub
+✅ PUSHED: Code on GitHub main branch
+
+═══════════════════════════════════════════════════════════════
+  QUICK UPDATE (Windows)
+═══════════════════════════════════════════════════════════════
+
+cd D:\medai-new
+git pull
+docker compose -f docker-compose.hub.yml down
+docker compose -f docker-compose.hub.yml pull
+docker compose -f docker-compose.hub.yml up -d
+
+═══════════════════════════════════════════════════════════════
+  TEST WITH NGROK
+═══════════════════════════════════════════════════════════════
+
+1. Start ngrok:
+   ngrok http 8080
+
+2. Copy the forwarding URL (e.g., https://abc123.ngrok.io)
+
+3. Open in browser and test:
+   ✓ Login works
+   ✓ Chatbot works (NO MORE 400 ERRORS!)
+   ✓ All pages work
+   ✓ Ngrok logs show 200 OK instead of 400
+
+═══════════════════════════════════════════════════════════════
+  WHAT WAS FIXED
+═══════════════════════════════════════════════════════════════
+
+Problem:
+  Ngrok was intercepting API calls with browser warning page
+  → Caused 400 Bad Request errors
+  → Chatbot couldn't send messages
+
+Solution:
+  Added header to all API calls:
+  ngrok-skip-browser-warning: true
+
+This tells ngrok:
+  "Skip warning page, forward directly to server"
+
+═══════════════════════════════════════════════════════════════
+  TECHNICAL DETAILS
+═══════════════════════════════════════════════════════════════
+
+Modified: src/main/resources/static/js/app.js
+Changed: Added header in api() function (line ~72)
+Effect: All API calls now bypass ngrok warning
+
+Docker: valantorajg/medai-app:latest
+Digest: sha256:6d279473f93ed899e2f48027b90ca3280fd946ce10435245238531990bc7c5c8
+GitHub: commit 69e0d29
+
+═══════════════════════════════════════════════════════════════
+  NO FURTHER ACTION NEEDED
+═══════════════════════════════════════════════════════════════
+
+✅ Works with ngrok
+✅ Works without ngrok (header is ignored)
+✅ No security impact
+✅ All pages fixed automatically
+
+═══════════════════════════════════════════════════════════════
