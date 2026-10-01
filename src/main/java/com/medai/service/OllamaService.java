@@ -111,6 +111,9 @@ public class OllamaService {
                 .model(modelName)
                 .temperature(0.7)
                 .numPredict(1024)
+                // Disable chain-of-thought / thinking mode explicitly.
+                // llama3.2:3b has no thinking step, but this guards against
+                // accidental model swaps to thinking models like qwen3.
                 .build();
     }
 

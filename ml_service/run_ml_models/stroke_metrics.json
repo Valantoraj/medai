@@ -1,0 +1,128 @@
+{
+  "task": "Stroke",
+  "target": "Doctor-diagnosed stroke (NHANES MCQ160F)",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 92,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 40904,
+  "n_test": 10226,
+  "prevalence": 0.042479953060825346,
+  "chosen_model": "stack_all",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.8354894090110214,
+    "xgboost": 0.8345295146027117,
+    "catboost": 0.8356614291757599,
+    "spline_logreg": 0.8307973109294262,
+    "stack_lgb_xgb_cat": 0.8376385849801503,
+    "stack_all": 0.8377096289629572
+  },
+  "test_roc_auc": 0.8205341612451432,
+  "test_roc_auc_ci95": [
+    0.8011493152655583,
+    0.8371547460192529
+  ],
+  "test_pr_auc": 0.16798095530435858,
+  "test_pr_auc_ci95": [
+    0.14331735406293256,
+    0.19637016236035174
+  ],
+  "test_brier": 0.03782740705207819,
+  "test_logloss": 0.14665339858133575,
+  "test_ece": 0.003937803036426951,
+  "baseline_logreg_test_auc": 0.814556131592422,
+  "auc_gain_vs_baseline_ci95": [
+    0.0008330965708232608,
+    0.011131907026979394
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.12390323182452037,
+    "sensitivity": 0.3824884792626728,
+    "specificity": 0.9174836601307189,
+    "ppv": 0.1704312114989733,
+    "npv": 0.971033290099438,
+    "f1": 0.23579545454545453,
+    "balanced_accuracy": 0.6499860696966959,
+    "tp": 166,
+    "fp": 808,
+    "fn": 268,
+    "tn": 8984
+  },
+  "at_youden_threshold": {
+    "threshold": 0.03918961259485524,
+    "sensitivity": 0.804147465437788,
+    "specificity": 0.7092524509803921,
+    "ppv": 0.10919899874843554,
+    "npv": 0.9879089615931721,
+    "f1": 0.19228650137741046,
+    "balanced_accuracy": 0.7566999582090901,
+    "tp": 349,
+    "fp": 2847,
+    "fn": 85,
+    "tn": 6945
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.11034761256800524,
+    "sensitivity": 0.43317972350230416,
+    "specificity": 0.9019607843137255,
+    "ppv": 0.16376306620209058,
+    "npv": 0.9729015201586253,
+    "f1": 0.23767383059418457,
+    "balanced_accuracy": 0.6675702539080148,
+    "tp": 188,
+    "fp": 960,
+    "fn": 246,
+    "tn": 8832
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.044096451853574505,
+    "sensitivity": 0.7741935483870968,
+    "specificity": 0.7336601307189542,
+    "ppv": 0.11413043478260869,
+    "npv": 0.9865421587475968,
+    "f1": 0.19893428063943164,
+    "balanced_accuracy": 0.7539268395530254,
+    "tp": 336,
+    "fp": 2608,
+    "fn": 98,
+    "tn": 7184
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 4882,
+      "auc": 0.8195944095688341,
+      "ece": 0.004608659802093437
+    },
+    "sex_female": {
+      "n": 5344,
+      "auc": 0.8215131560256517,
+      "ece": 0.004099421858605081
+    },
+    "age_low": {
+      "n": 3514,
+      "auc": 0.6941190253045924,
+      "ece": 7.43834367613527e-05
+    },
+    "age_mid": {
+      "n": 3352,
+      "auc": 0.8020079950799508,
+      "ece": 0.0018709633289594808
+    },
+    "age_high": {
+      "n": 3360,
+      "auc": 0.6847281109092133,
+      "ece": 0.011880641092563766
+    }
+  },
+  "quality_score": {
+    "total": 65.7,
+    "components": {
+      "discrimination": 27.1,
+      "pr_lift": 23.0,
+      "calibration": 13.8,
+      "incremental_vs_baseline": 1.8
+    }
+  }
+}

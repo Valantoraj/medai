@@ -1,0 +1,128 @@
+{
+  "task": "Lung disease (copd)",
+  "target": "Doctor-diagnosed emphysema / chronic bronchitis / COPD (NHANES MCQ160G,K,P)",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 92,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 40942,
+  "n_test": 10236,
+  "prevalence": 0.07323459298917503,
+  "chosen_model": "stack_all",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.7873970631134087,
+    "xgboost": 0.7876091660024386,
+    "catboost": 0.7868939033359368,
+    "spline_logreg": 0.7804639543236147,
+    "stack_lgb_xgb_cat": 0.7897229908842173,
+    "stack_all": 0.7898114256928893
+  },
+  "test_roc_auc": 0.7979269801110409,
+  "test_roc_auc_ci95": [
+    0.7828134576176365,
+    0.8143010201266895
+  ],
+  "test_pr_auc": 0.30512880528773934,
+  "test_pr_auc_ci95": [
+    0.27239977487210737,
+    0.3424073096805019
+  ],
+  "test_brier": 0.05923633752143001,
+  "test_logloss": 0.21707244929390043,
+  "test_ece": 0.004405750496720838,
+  "baseline_logreg_test_auc": 0.7795254058612692,
+  "auc_gain_vs_baseline_ci95": [
+    0.01245349414213709,
+    0.023181800041382056
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.1517050687924224,
+    "sensitivity": 0.472,
+    "specificity": 0.8908918406072106,
+    "ppv": 0.2548596112311015,
+    "npv": 0.9552390640895219,
+    "f1": 0.3309957924263675,
+    "balanced_accuracy": 0.6814459203036053,
+    "tp": 354,
+    "fp": 1035,
+    "fn": 396,
+    "tn": 8451
+  },
+  "at_youden_threshold": {
+    "threshold": 0.0775141092103227,
+    "sensitivity": 0.7146666666666667,
+    "specificity": 0.7378241619228336,
+    "ppv": 0.1773073106185908,
+    "npv": 0.9703313461805074,
+    "f1": 0.2841240392260801,
+    "balanced_accuracy": 0.7262454142947501,
+    "tp": 536,
+    "fp": 2487,
+    "fn": 214,
+    "tn": 6999
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.15450078678922363,
+    "sensitivity": 0.4653333333333333,
+    "specificity": 0.8940543959519291,
+    "ppv": 0.25775480059084194,
+    "npv": 0.9548525106957892,
+    "f1": 0.33174904942965777,
+    "balanced_accuracy": 0.6796938646426313,
+    "tp": 349,
+    "fp": 1005,
+    "fn": 401,
+    "tn": 8481
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.05049874915565941,
+    "sensitivity": 0.8186666666666667,
+    "specificity": 0.599831330381615,
+    "ppv": 0.13922902494331066,
+    "npv": 0.9766563680054926,
+    "f1": 0.237984496124031,
+    "balanced_accuracy": 0.7092489985241408,
+    "tp": 614,
+    "fp": 3796,
+    "fn": 136,
+    "tn": 5690
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 4922,
+      "auc": 0.8237207285342586,
+      "ece": 0.00892290722565012
+    },
+    "sex_female": {
+      "n": 5314,
+      "auc": 0.7726752807102623,
+      "ece": 0.004312934657941216
+    },
+    "age_low": {
+      "n": 3489,
+      "auc": 0.7440536261996635,
+      "ece": 0.0019698913337874023
+    },
+    "age_mid": {
+      "n": 3508,
+      "auc": 0.8060880246664471,
+      "ece": 0.008654304548279753
+    },
+    "age_high": {
+      "n": 3239,
+      "auc": 0.7606125416654862,
+      "ece": 0.011742860906380813
+    }
+  },
+  "quality_score": {
+    "total": 67.8,
+    "components": {
+      "discrimination": 24.7,
+      "pr_lift": 23.9,
+      "calibration": 13.7,
+      "incremental_vs_baseline": 5.5
+    }
+  }
+}

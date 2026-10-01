@@ -1,0 +1,128 @@
+{
+  "task": "Kidney stone / disease (ckd_selfreport)",
+  "target": "Told of weak/failing kidneys (NHANES KIQ022)",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 92,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 40904,
+  "n_test": 10226,
+  "prevalence": 0.035263054957950325,
+  "chosen_model": "stack_lgb_xgb_cat",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.8349808390255314,
+    "xgboost": 0.8342862945591858,
+    "catboost": 0.8363416260071048,
+    "spline_logreg": 0.8257229905192945,
+    "stack_lgb_xgb_cat": 0.838302711342733,
+    "stack_all": 0.8381013202469189
+  },
+  "test_roc_auc": 0.8257237245753967,
+  "test_roc_auc_ci95": [
+    0.8011399836522002,
+    0.8490996495240509
+  ],
+  "test_pr_auc": 0.34862258202574675,
+  "test_pr_auc_ci95": [
+    0.2960507076783551,
+    0.40227209969015054
+  ],
+  "test_brier": 0.027721791698561014,
+  "test_logloss": 0.11625895985297484,
+  "test_ece": 0.0014465714905106683,
+  "baseline_logreg_test_auc": 0.813125673040338,
+  "auc_gain_vs_baseline_ci95": [
+    0.0031226066105782715,
+    0.023085746749911533
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.174474742402499,
+    "sensitivity": 0.3656509695290859,
+    "specificity": 0.9794221996958946,
+    "ppv": 0.3940298507462687,
+    "npv": 0.9768476392680214,
+    "f1": 0.3793103448275862,
+    "balanced_accuracy": 0.6725365846124902,
+    "tp": 132,
+    "fp": 203,
+    "fn": 229,
+    "tn": 9662
+  },
+  "at_youden_threshold": {
+    "threshold": 0.032946240493121226,
+    "sensitivity": 0.6814404432132964,
+    "specificity": 0.8203750633552965,
+    "ppv": 0.12190287413280476,
+    "npv": 0.9859892787524367,
+    "f1": 0.2068095838587642,
+    "balanced_accuracy": 0.7509077532842965,
+    "tp": 246,
+    "fp": 1772,
+    "fn": 115,
+    "tn": 8093
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.05647252803627251,
+    "sensitivity": 0.5789473684210527,
+    "specificity": 0.8953877344145971,
+    "ppv": 0.16841257050765512,
+    "npv": 0.9830829159710629,
+    "f1": 0.2609238451935081,
+    "balanced_accuracy": 0.7371675514178249,
+    "tp": 209,
+    "fp": 1032,
+    "fn": 152,
+    "tn": 8833
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.021870886382063186,
+    "sensitivity": 0.7839335180055401,
+    "specificity": 0.7076533198175368,
+    "ppv": 0.0893590148405431,
+    "npv": 0.988950276243094,
+    "f1": 0.16043083900226757,
+    "balanced_accuracy": 0.7457934189115385,
+    "tp": 283,
+    "fp": 2884,
+    "fn": 78,
+    "tn": 6981
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 4924,
+      "auc": 0.8558404751114388,
+      "ece": 0.005637234338976615
+    },
+    "sex_female": {
+      "n": 5302,
+      "auc": 0.7975044199905503,
+      "ece": 0.005790622468550947
+    },
+    "age_low": {
+      "n": 3546,
+      "auc": 0.7430204049351471,
+      "ece": 0.003690482620709107
+    },
+    "age_mid": {
+      "n": 3453,
+      "auc": 0.7934747823860726,
+      "ece": 0.002541714623840084
+    },
+    "age_high": {
+      "n": 3227,
+      "auc": 0.83380684060167,
+      "ece": 0.00568626523198843
+    }
+  },
+  "quality_score": {
+    "total": 75.9,
+    "components": {
+      "discrimination": 27.6,
+      "pr_lift": 30.0,
+      "calibration": 14.6,
+      "incremental_vs_baseline": 3.8
+    }
+  }
+}

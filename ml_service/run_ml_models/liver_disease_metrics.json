@@ -1,0 +1,128 @@
+{
+  "task": "Liver disease (elastography)",
+  "target": "FibroScan-defined steatosis (CAP>=285) or fibrosis (LSM>=8.0 kPa), NHANES 2017-2023",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 92,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 10136,
+  "n_test": 2535,
+  "prevalence": 0.3978375818798832,
+  "chosen_model": "stack_all",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.8244537840461107,
+    "xgboost": 0.8451946599549606,
+    "catboost": 0.8471284848993114,
+    "spline_logreg": 0.8439271541950114,
+    "stack_lgb_xgb_cat": 0.8477860276373546,
+    "stack_all": 0.8479824006246229
+  },
+  "test_roc_auc": 0.8404263333796617,
+  "test_roc_auc_ci95": [
+    0.8233370501279479,
+    0.8548674178643664
+  ],
+  "test_pr_auc": 0.7920796828194083,
+  "test_pr_auc_ci95": [
+    0.7683977056073896,
+    0.8148724255309865
+  ],
+  "test_brier": 0.15736362159284692,
+  "test_logloss": 0.4782059900327479,
+  "test_ece": 0.021095837505685833,
+  "baseline_logreg_test_auc": 0.8343915247698628,
+  "auc_gain_vs_baseline_ci95": [
+    0.0017633707641371594,
+    0.011366640925387288
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.3784962955048187,
+    "sensitivity": 0.7740336967294351,
+    "specificity": 0.7332896461336829,
+    "ppv": 0.6574074074074074,
+    "npv": 0.8307349665924276,
+    "f1": 0.7109695038689122,
+    "balanced_accuracy": 0.7536616714315589,
+    "tp": 781,
+    "fp": 407,
+    "fn": 228,
+    "tn": 1119
+  },
+  "at_youden_threshold": {
+    "threshold": 0.3784962955048187,
+    "sensitivity": 0.7740336967294351,
+    "specificity": 0.7332896461336829,
+    "ppv": 0.6574074074074074,
+    "npv": 0.8307349665924276,
+    "f1": 0.7109695038689122,
+    "balanced_accuracy": 0.7536616714315589,
+    "tp": 781,
+    "fp": 407,
+    "fn": 228,
+    "tn": 1119
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.6078253114099363,
+    "sensitivity": 0.5569871159563925,
+    "specificity": 0.8977719528178244,
+    "ppv": 0.7827298050139275,
+    "npv": 0.7539900935608145,
+    "f1": 0.6508396062536189,
+    "balanced_accuracy": 0.7273795343871085,
+    "tp": 562,
+    "fp": 156,
+    "fn": 447,
+    "tn": 1370
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.3583558627576471,
+    "sensitivity": 0.7898909811694748,
+    "specificity": 0.716251638269987,
+    "ppv": 0.6479674796747967,
+    "npv": 0.8375478927203065,
+    "f1": 0.7119249665029032,
+    "balanced_accuracy": 0.7530713097197308,
+    "tp": 797,
+    "fp": 433,
+    "fn": 212,
+    "tn": 1093
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 1193,
+      "auc": 0.8283954953321853,
+      "ece": 0.02607682235144017
+    },
+    "sex_female": {
+      "n": 1342,
+      "auc": 0.8467233113865696,
+      "ece": 0.02649146082105787
+    },
+    "age_low": {
+      "n": 858,
+      "auc": 0.8470641842674418,
+      "ece": 0.03613891826339894
+    },
+    "age_mid": {
+      "n": 880,
+      "auc": 0.8540100250626566,
+      "ece": 0.0173714896877105
+    },
+    "age_high": {
+      "n": 797,
+      "auc": 0.8010576860683927,
+      "ece": 0.04024367527022541
+    }
+  },
+  "quality_score": {
+    "total": 51.1,
+    "components": {
+      "discrimination": 29.0,
+      "pr_lift": 11.5,
+      "calibration": 8.7,
+      "incremental_vs_baseline": 1.8
+    }
+  }
+}

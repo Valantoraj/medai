@@ -1,0 +1,128 @@
+{
+  "task": "Heart disease (CHF / CHD / angina / MI)",
+  "target": "Doctor-diagnosed CHF, coronary heart disease, angina or heart attack (NHANES MCQ160B-E)",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 92,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 40964,
+  "n_test": 10241,
+  "prevalence": 0.08897568596816717,
+  "chosen_model": "stack_all",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.8727046550169119,
+    "xgboost": 0.8730894882445129,
+    "catboost": 0.8722188203429513,
+    "spline_logreg": 0.8703059092609445,
+    "stack_lgb_xgb_cat": 0.8743608464316712,
+    "stack_all": 0.8749594081002071
+  },
+  "test_roc_auc": 0.8673971690532412,
+  "test_roc_auc_ci95": [
+    0.8549734596220754,
+    0.8776884406421056
+  ],
+  "test_pr_auc": 0.41099941654611855,
+  "test_pr_auc_ci95": [
+    0.37640353862597475,
+    0.4476441213660955
+  ],
+  "test_brier": 0.06408984421234087,
+  "test_logloss": 0.21777391767547347,
+  "test_ece": 0.0065389155648926485,
+  "baseline_logreg_test_auc": 0.8603772164200089,
+  "auc_gain_vs_baseline_ci95": [
+    0.003713858461524136,
+    0.01039891012531071
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.2064434023379536,
+    "sensitivity": 0.6026344676180022,
+    "specificity": 0.892497320471597,
+    "ppv": 0.3537371134020619,
+    "npv": 0.9583381286684314,
+    "f1": 0.4457978075517661,
+    "balanced_accuracy": 0.7475658940447996,
+    "tp": 549,
+    "fp": 1003,
+    "fn": 362,
+    "tn": 8327
+  },
+  "at_youden_threshold": {
+    "threshold": 0.08943295547480595,
+    "sensitivity": 0.8243688254665203,
+    "specificity": 0.7587352625937835,
+    "ppv": 0.2501665556295803,
+    "npv": 0.9778974996546484,
+    "f1": 0.38384870943010474,
+    "balanced_accuracy": 0.791552044030152,
+    "tp": 751,
+    "fp": 2251,
+    "fn": 160,
+    "tn": 7079
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.207405121853193,
+    "sensitivity": 0.601536772777168,
+    "specificity": 0.8930332261521973,
+    "ppv": 0.35446313065976714,
+    "npv": 0.9582518688901668,
+    "f1": 0.4460724460724461,
+    "balanced_accuracy": 0.7472849994646826,
+    "tp": 548,
+    "fp": 998,
+    "fn": 363,
+    "tn": 8332
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.10617020768633581,
+    "sensitivity": 0.7804610318331504,
+    "specificity": 0.7886387995712755,
+    "ppv": 0.26500186358553857,
+    "npv": 0.9735379730087325,
+    "f1": 0.3956594323873121,
+    "balanced_accuracy": 0.7845499157022129,
+    "tp": 711,
+    "fp": 1972,
+    "fn": 200,
+    "tn": 7358
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 4944,
+      "auc": 0.8721028985876497,
+      "ece": 0.008659046972156505
+    },
+    "sex_female": {
+      "n": 5297,
+      "auc": 0.8551745703133425,
+      "ece": 0.005629608901349157
+    },
+    "age_low": {
+      "n": 3481,
+      "auc": 0.7869819771618998,
+      "ece": 0.0013652211166495243
+    },
+    "age_mid": {
+      "n": 3362,
+      "auc": 0.8302170394838938,
+      "ece": 0.009513775792217852
+    },
+    "age_high": {
+      "n": 3398,
+      "auc": 0.7706198833004236,
+      "ece": 0.016544691423125507
+    }
+  },
+  "quality_score": {
+    "total": 72.5,
+    "components": {
+      "discrimination": 31.7,
+      "pr_lift": 25.6,
+      "calibration": 13.0,
+      "incremental_vs_baseline": 2.1
+    }
+  }
+}

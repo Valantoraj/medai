@@ -1,0 +1,128 @@
+{
+  "task": "Diabetes (screening)",
+  "target": "Diagnosed OR lab-defined diabetes (HbA1c>=6.5 / FPG>=126); glucose & HbA1c withheld from inputs",
+  "preset": "balanced",
+  "feature_set": "extended",
+  "n_features": 86,
+  "split_mode": "random",
+  "weighted": false,
+  "leaky_inputs": false,
+  "n_train": 39940,
+  "n_test": 9986,
+  "prevalence": 0.16903016464367263,
+  "chosen_model": "stack_all",
+  "oof_auc_by_candidate": {
+    "lightgbm": 0.8893454235271551,
+    "xgboost": 0.890464597799421,
+    "catboost": 0.8877281213939873,
+    "spline_logreg": 0.8821936669083307,
+    "stack_lgb_xgb_cat": 0.8913717876705648,
+    "stack_all": 0.891399441108663
+  },
+  "test_roc_auc": 0.8983086985500988,
+  "test_roc_auc_ci95": [
+    0.8909144654961455,
+    0.9056205994151064
+  ],
+  "test_pr_auc": 0.6823372344611022,
+  "test_pr_auc_ci95": [
+    0.662718363484968,
+    0.7031814925723248
+  ],
+  "test_brier": 0.08583112093789605,
+  "test_logloss": 0.2796279079531307,
+  "test_ece": 0.00907176236273425,
+  "baseline_logreg_test_auc": 0.8772449808039167,
+  "auc_gain_vs_baseline_ci95": [
+    0.017310285471420026,
+    0.02495390823888608
+  ],
+  "at_max_f1_threshold": {
+    "threshold": 0.3028923908965017,
+    "sensitivity": 0.6901658767772512,
+    "specificity": 0.90118100747168,
+    "ppv": 0.5869017632241813,
+    "npv": 0.9346331708536433,
+    "f1": 0.6343588347399944,
+    "balanced_accuracy": 0.7956734421244656,
+    "tp": 1165,
+    "fp": 820,
+    "fn": 523,
+    "tn": 7478
+  },
+  "at_youden_threshold": {
+    "threshold": 0.16139551198675625,
+    "sensitivity": 0.8436018957345972,
+    "specificity": 0.792239093757532,
+    "ppv": 0.45235069885641677,
+    "npv": 0.961392219947353,
+    "f1": 0.5889164598842018,
+    "balanced_accuracy": 0.8179204947460645,
+    "tp": 1424,
+    "fp": 1724,
+    "fn": 264,
+    "tn": 6574
+  },
+  "at_spec90_threshold": {
+    "threshold": 0.3115141558141408,
+    "sensitivity": 0.6824644549763034,
+    "specificity": 0.9053988912991082,
+    "ppv": 0.5947341249354672,
+    "npv": 0.9334078767548764,
+    "f1": 0.6355862068965518,
+    "balanced_accuracy": 0.7939316731377057,
+    "tp": 1152,
+    "fp": 785,
+    "fn": 536,
+    "tn": 7513
+  },
+  "at_sens80_threshold": {
+    "threshold": 0.18688987879027927,
+    "sensitivity": 0.818127962085308,
+    "specificity": 0.8229693902145095,
+    "ppv": 0.4845614035087719,
+    "npv": 0.9569786995515696,
+    "f1": 0.6086381665932128,
+    "balanced_accuracy": 0.8205486761499088,
+    "tp": 1381,
+    "fp": 1469,
+    "fn": 307,
+    "tn": 6829
+  },
+  "subgroup": {
+    "sex_male": {
+      "n": 4775,
+      "auc": 0.8941518521062715,
+      "ece": 0.013776780511853055
+    },
+    "sex_female": {
+      "n": 5211,
+      "auc": 0.902622992458286,
+      "ece": 0.010092177436171818
+    },
+    "age_low": {
+      "n": 3495,
+      "auc": 0.858490057660182,
+      "ece": 0.007327008528484608
+    },
+    "age_mid": {
+      "n": 3166,
+      "auc": 0.8801985621595506,
+      "ece": 0.015067316745675676
+    },
+    "age_high": {
+      "n": 3325,
+      "auc": 0.8430051219128684,
+      "ece": 0.0077449055327057205
+    }
+  },
+  "quality_score": {
+    "total": 76.8,
+    "components": {
+      "discrimination": 34.8,
+      "pr_lift": 23.4,
+      "calibration": 12.3,
+      "incremental_vs_baseline": 6.3
+    }
+  }
+}
