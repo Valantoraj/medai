@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -20,44 +20,86 @@ public class HospitalService {
     private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
 
-    private static final String OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+    // Two Overpass mirrors — try primary first, fall back to secondary
+    private static final String[] OVERPASS_MIRRORS = {
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter"
+    };
 
-    /**
-     * Query Overpass API for hospitals within radius metres of lat/lon.
-     * Returns a list sorted by distance from the user.
-     */
+    // Simple in-memory cache: key = "lat_lon_radius", value = results + timestamp
+    private final Map<String, CachedResult> cache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_MS = 5 * 60 * 1000L; // 5 minutes
+
+    private record CachedResult(List<HospitalResult> results, long fetchedAt) {}
+
     public List<HospitalResult> findNearby(double lat, double lon, int radiusMetres) {
-        String query = buildOverpassQuery(lat, lon, radiusMetres);
+        // Round to 3 decimal places (~110m precision) for cache key
+        String cacheKey = String.format("%.3f_%.3f_%d", lat, lon, radiusMetres);
 
-        try {
-            String json = webClientBuilder.build()
-                    .post()
-                    .uri(OVERPASS_URL)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .bodyValue("data=" + java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(java.time.Duration.ofSeconds(15))
-                    .block();
-
-            return parseOverpassResponse(json, lat, lon);
-        } catch (Exception e) {
-            log.error("Overpass API error: {}", e.getMessage());
-            return List.of();
+        // Return cached result if fresh
+        CachedResult cached = cache.get(cacheKey);
+        if (cached != null && (System.currentTimeMillis() - cached.fetchedAt()) < CACHE_TTL_MS) {
+            log.info("Hospital cache hit for key={}", cacheKey);
+            return cached.results();
         }
+
+        String query = buildOverpassQuery(lat, lon, radiusMetres);
+        List<HospitalResult> results = List.of();
+
+        // Try each mirror in order
+        for (String mirrorUrl : OVERPASS_MIRRORS) {
+            try {
+                log.info("Querying Overpass mirror: {}", mirrorUrl);
+                String json = webClientBuilder.build()
+                        .post()
+                        .uri(mirrorUrl)
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .bodyValue("data=" + java.net.URLEncoder.encode(
+                                query, java.nio.charset.StandardCharsets.UTF_8))
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .timeout(Duration.ofSeconds(20))
+                        .block();
+
+                results = parseOverpassResponse(json, lat, lon);
+
+                if (!results.isEmpty()) {
+                    // Cache successful result
+                    cache.put(cacheKey, new CachedResult(results, System.currentTimeMillis()));
+                    log.info("Found {} hospitals via {}", results.size(), mirrorUrl);
+                    return results;
+                }
+                log.warn("Mirror {} returned 0 results, trying next", mirrorUrl);
+
+            } catch (Exception e) {
+                log.warn("Overpass mirror {} failed: {}", mirrorUrl, e.getMessage());
+            }
+        }
+
+        // All mirrors failed or returned empty — return cached (possibly stale) data
+        if (cached != null && !cached.results().isEmpty()) {
+            log.info("All mirrors failed, returning stale cache for key={}", cacheKey);
+            return cached.results();
+        }
+
+        log.error("All Overpass mirrors failed and no cache available");
+        return results;
     }
 
     private String buildOverpassQuery(double lat, double lon, int radius) {
-        return String.format("""
-            [out:json][timeout:15];
-            (
-              node(around:%d,%.6f,%.6f)["amenity"="hospital"];
-              way(around:%d,%.6f,%.6f)["amenity"="hospital"];
-              node(around:%d,%.6f,%.6f)["amenity"="clinic"];
-              way(around:%d,%.6f,%.6f)["amenity"="clinic"];
-            );
-            out center;
-            """,
+        return String.format(
+            "[out:json][timeout:20];\n" +
+            "(\n" +
+            "  node(around:%d,%.6f,%.6f)[\"amenity\"=\"hospital\"];\n" +
+            "  way(around:%d,%.6f,%.6f)[\"amenity\"=\"hospital\"];\n" +
+            "  node(around:%d,%.6f,%.6f)[\"amenity\"=\"clinic\"];\n" +
+            "  way(around:%d,%.6f,%.6f)[\"amenity\"=\"clinic\"];\n" +
+            "  node(around:%d,%.6f,%.6f)[\"healthcare\"=\"hospital\"];\n" +
+            "  way(around:%d,%.6f,%.6f)[\"healthcare\"=\"hospital\"];\n" +
+            ");\n" +
+            "out center;\n",
+            radius, lat, lon,
+            radius, lat, lon,
             radius, lat, lon,
             radius, lat, lon,
             radius, lat, lon,
@@ -67,15 +109,18 @@ public class HospitalService {
 
     private List<HospitalResult> parseOverpassResponse(String json, double userLat, double userLon) {
         List<HospitalResult> results = new ArrayList<>();
+        if (json == null || json.isBlank()) return results;
+
         try {
             JsonNode root = objectMapper.readTree(json);
             JsonNode elements = root.get("elements");
-            if (elements == null) return results;
+            if (elements == null || !elements.isArray()) return results;
+
+            Set<String> seen = new HashSet<>(); // deduplicate by name+coords
 
             for (JsonNode el : elements) {
                 double elLat, elLon;
 
-                // node has lat/lon directly; way has them in "center"
                 if (el.has("lat")) {
                     elLat = el.get("lat").asDouble();
                     elLon = el.get("lon").asDouble();
@@ -89,38 +134,40 @@ public class HospitalService {
                 JsonNode tags = el.get("tags");
                 if (tags == null) continue;
 
-                String name = getTag(tags, "name", "Unnamed Hospital");
-                if (name.equals("Unnamed Hospital") && !getTag(tags, "amenity", "").contains("hospital")) {
-                    name = "Unnamed Clinic";
+                String name = getTag(tags, "name", "");
+                if (name.isBlank()) {
+                    String amenity = getTag(tags, "amenity", "");
+                    name = amenity.equals("hospital") ? "Unnamed Hospital" : "Unnamed Clinic";
                 }
 
-                String phone = getTag(tags, "phone",
-                        getTag(tags, "contact:phone", ""));
-                String website = getTag(tags, "website",
-                        getTag(tags, "contact:website", ""));
-                boolean emergency = "yes".equalsIgnoreCase(getTag(tags, "emergency", "no"));
-                String specialty = getTag(tags, "healthcare:speciality", "");
+                // Deduplicate
+                String dedupeKey = String.format("%s_%.4f_%.4f", name, elLat, elLon);
+                if (!seen.add(dedupeKey)) continue;
 
-                // Build address from tags
+                String phone   = getTag(tags, "phone",
+                                 getTag(tags, "contact:phone", ""));
+                boolean emergency = "yes".equalsIgnoreCase(getTag(tags, "emergency", "no"));
+                String specialty  = getTag(tags, "healthcare:speciality",
+                                   getTag(tags, "healthcare", ""));
+
                 StringBuilder addr = new StringBuilder();
                 appendIfPresent(addr, tags, "addr:housenumber");
                 appendIfPresent(addr, tags, "addr:street");
                 appendIfPresent(addr, tags, "addr:city");
-                String address = addr.length() > 0 ? addr.toString().trim() : "";
+                String address = addr.toString().trim();
 
-                double distance = haversineKm(userLat, userLon, elLat, elLon);
+                double distanceKm = haversineKm(userLat, userLon, elLat, elLon);
 
                 results.add(HospitalResult.builder()
                         .osmId(el.get("id").asLong())
                         .name(name)
                         .lat(elLat)
                         .lon(elLon)
-                        .phone(phone)
+                        .phone(phone.isBlank() ? null : phone)
                         .address(address)
-                        .website(website)
                         .emergency(emergency)
-                        .specialty(specialty)
-                        .distanceKm(Math.round(distance * 100.0) / 100.0)
+                        .specialty(specialty.isBlank() ? null : specialty)
+                        .distanceKm(Math.round(distanceKm * 100.0) / 100.0)
                         .build());
             }
 
@@ -133,12 +180,12 @@ public class HospitalService {
 
     private String getTag(JsonNode tags, String key, String defaultVal) {
         JsonNode node = tags.get(key);
-        return node != null ? node.asText() : defaultVal;
+        return node != null && !node.isNull() ? node.asText() : defaultVal;
     }
 
     private void appendIfPresent(StringBuilder sb, JsonNode tags, String key) {
         JsonNode node = tags.get(key);
-        if (node != null && !node.asText().isBlank()) {
+        if (node != null && !node.isNull() && !node.asText().isBlank()) {
             if (sb.length() > 0) sb.append(", ");
             sb.append(node.asText());
         }

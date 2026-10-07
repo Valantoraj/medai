@@ -72,6 +72,16 @@ ml_service/*.tar
 Thumbs.db
 desktop.ini
 
+# ── Mobile app (contains hardcoded ngrok URLs and API keys — never push) ────
+mobile_app/
+plan_mobile_app.txt
+
+# ── Cloudflare / ngrok tunnel scripts (contain URLs) ────────────────────────
+setup-cloudflare-tunnel.ps1
+start-with-tunnel.ps1
+start-with-ngrok.ps1
+cloudflare/
+
 # ── Deployment scripts (machine-specific) ───────────────────
 transfer-to-server.sh
 lung_cancer_raw
